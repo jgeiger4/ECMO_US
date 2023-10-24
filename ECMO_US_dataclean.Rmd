@@ -33,6 +33,28 @@ ecmo <- ecmo %>%
                                             sfa_distal_pvs_post_rpc == " " ~ NA,
                                             .default = sfa_distal_pvs_post_rpc),
          sfa_distal_pvs_post_rpc = as.numeric(sfa_distal_pvs_post_rpc),
+         ata_pvs_pre_rpc = case_when(ata_pvs_pre_rpc == "N/A" ~ NA,
+                                            ata_pvs_pre_rpc == " " ~ NA,
+                                            .default = ata_pvs_pre_rpc),
+         ata_pvs_pre_rpc = as.numeric(ata_pvs_pre_rpc),
+         ata_pvs_post_rpc = case_when(ata_pvs_post_rpc == "N/A" ~ NA,
+                                            ata_pvs_post_rpc == " " ~ NA,
+                                            .default = ata_pvs_post_rpc),
+         ata_pvs_post_rpc = as.numeric(ata_pvs_post_rpc),
+         
+         pta_pvs_pre_rpc = case_when(pta_pvs_pre_rpc == "N/A" ~ NA,
+                                            pta_pvs_pre_rpc == " " ~ NA,
+                                            .default = pta_pvs_pre_rpc),
+         pta_pvs_pre_rpc = as.numeric(pta_pvs_pre_rpc),
+         pta_pvs_post_rpc = case_when(pta_pvs_post_rpc == "N/A" ~ NA,
+                                            pta_pvs_post_rpc == " " ~ NA,
+                                            .default = pta_pvs_post_rpc),
+         pta_pvs_post_rpc = as.numeric(pta_pvs_post_rpc),
+         
+         tibial_pvs = pmin(ata_pvs_pre_rpc, ata_pvs_post_rpc, pta_pvs_pre_rpc,
+                           pta_pvs_post_rpc,
+                                      na.rm = TRUE),
+         
          preop_abi_l = case_when(preop_abi_l == " " ~ NA,
                                  preop_abi_l == "Non-compressible" ~ "2.00",
                                  .default = preop_abi_l),
@@ -61,11 +83,15 @@ There are `r length(unique(ecmo$e_mrn))` subjects within the dataset. Of which t
 
 ```{r tabl-1, echo=FALSE}
 
-CreateTableOne(vars = c("age", "sex_gender", "hospital_length_of_stay", "distal_perfusion_cannula",
+CreateTableOne(vars = c("age", "sex_gender", "hospital_length_of_stay",
+                        "distal_perfusion_cannula",
                         "distal_perfusion_cannula_done_at_the_time_of_initial_mcs_implant",
-                        "sfa_distal_pvs_pre_rpc", "sfa_distal_pvs_post_rpc", "preop_abi_l",
-                        "preop_abi_r", "amputation_yn", "fasciotomy_yn", "mortality_yn", 
-                        "sfa_distal_pvs"), data = ecmo)
+                        "sfa_distal_pvs_pre_rpc", "sfa_distal_pvs_post_rpc",
+                        "ata_pvs_pre_rpc", "ata_pvs_post_rpc",
+                        "pta_pvs_pre_rpc", "pta_pvs_post_rpc",
+                        "preop_abi_l", "preop_abi_r", "amputation_yn",
+                        "fasciotomy_yn", "mortality_yn", 
+                        "sfa_distal_pvs", "tibial_pvs"), data = ecmo)
 
 ecmo %>%
   group_by(fasciotomy_yn, amputation_yn) %>%
@@ -84,6 +110,19 @@ ecmo %>%
   ggplot(aes(sfa_distal_pvs)) +
   geom_histogram()
 ecmo %>%
+  ggplot(aes(ata_pvs_pre_rpc)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(pta_pvs_pre_rpc)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(tibial_pvs)) +
+  geom_histogram()
+
+ecmo %>%
   ggplot(aes(preop_abi_l)) +
   geom_histogram()
 ecmo %>%
@@ -94,9 +133,22 @@ ecmo %>%
 ecmo %>%
   ggplot(aes(sfa_distal_pvs, fill = fasciotomy_yn)) +
   geom_histogram()
-
 ecmo %>%
   ggplot(aes(sfa_distal_pvs, fill = amputation_yn)) +
   geom_histogram()
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs, fill = mortality_yn)) +
+  geom_density()
+
+ecmo %>%
+  ggplot(aes(tibial_pvs, fill = fasciotomy_yn)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(tibial_pvs, fill = amputation_yn)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(tibial_pvs, fill = mortality_yn)) +
+  geom_density()
+
 
 ```
