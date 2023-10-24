@@ -6,8 +6,6 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-
 library(tidyverse)
 library(broom)
 library(janitor)
@@ -21,9 +19,7 @@ ecmo <- read_xlsx("raw_data/test_MCSDatabase_PSV_collection_MRN.xlsx") %>%
 
 ##### Descriptive statistics
 
-There are `r length(unique(ecmo$eMRN))` subjects within the dataset.
-
-```{r data-cleaning}
+```{r data-cleaning, include=FALSE}
 
 ecmo <- ecmo %>%
   mutate(sex_gender = case_when(sex_gender == "F" ~ "Female",
@@ -39,14 +35,68 @@ ecmo <- ecmo %>%
          sfa_distal_pvs_post_rpc = as.numeric(sfa_distal_pvs_post_rpc),
          preop_abi_l = case_when(preop_abi_l == " " ~ NA,
                                  preop_abi_l == "Non-compressible" ~ "2.00",
-                                 .default = preop_abi_l))
-         
-         ) %>%
-  mutate(sfa_distal_pvs_pre_rpc = )
+                                 .default = preop_abi_l),
+         preop_abi_l = as.numeric(preop_abi_l),
+         preop_abi_r = case_when(preop_abi_r == " " ~ NA,
+                                 preop_abi_r == "Non-compressible" ~ "2.00",
+                                 .default = preop_abi_r),
+         preop_abi_r = as.numeric(preop_abi_r),
+         amputation_yn = case_when(amputation == 1 ~ "Yes",
+                                   amputation == 0 ~ "No",
+                                   .default = NA),
+         fasciotomy_yn = case_when(fasciotomy == 1 ~ "Yes",
+                                   fasciotomy == 0 ~ "No",
+                                   .default = NA),
+         mortality_yn = case_when(mortality == 1 ~ "Yes",
+                                   mortality == 0 ~ "No",
+                                   .default = NA),
+         sfa_distal_pvs = pmin(sfa_distal_pvs_pre_rpc, sfa_distal_pvs_post_rpc,
+                                      na.rm = TRUE)
+  )
+
+
+```
+
+There are `r length(unique(ecmo$e_mrn))` subjects within the dataset. Of which there were `r nrow(filter(ecmo, amputation_yn == "Yes"))` amputations and `r nrow(filter(ecmo, fasciotomy_yn == "Yes"))` fasciotomies.
+
+```{r tabl-1, echo=FALSE}
 
 CreateTableOne(vars = c("age", "sex_gender", "hospital_length_of_stay", "distal_perfusion_cannula",
                         "distal_perfusion_cannula_done_at_the_time_of_initial_mcs_implant",
                         "sfa_distal_pvs_pre_rpc", "sfa_distal_pvs_post_rpc", "preop_abi_l",
-                        "preop_abi_r", "amputation", "fasciotomy", "mortality"), data = ecmo)
+                        "preop_abi_r", "amputation_yn", "fasciotomy_yn", "mortality_yn", 
+                        "sfa_distal_pvs"), data = ecmo)
+
+ecmo %>%
+  group_by(fasciotomy_yn, amputation_yn) %>%
+  summarise(case_number = n())
 ```
 
+```{r distributions, echo=FALSE}
+
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs_pre_rpc)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs_post_rpc)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(preop_abi_l)) +
+  geom_histogram()
+ecmo %>%
+  ggplot(aes(preop_abi_r)) +
+  geom_histogram()
+
+
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs, fill = fasciotomy_yn)) +
+  geom_histogram()
+
+ecmo %>%
+  ggplot(aes(sfa_distal_pvs, fill = amputation_yn)) +
+  geom_histogram()
+
+```
