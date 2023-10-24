@@ -1,0 +1,52 @@
+---
+title: "ECMO US"
+author: "Joshua Geiger"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(broom)
+library(janitor)
+library(readxl)
+library(tableone)
+
+ecmo <- read_xlsx("raw_data/test_MCSDatabase_PSV_collection_MRN.xlsx") %>%
+  clean_names()
+
+```
+
+##### Descriptive statistics
+
+There are `r length(unique(ecmo$eMRN))` subjects within the dataset.
+
+```{r data-cleaning}
+
+ecmo <- ecmo %>%
+  mutate(sex_gender = case_when(sex_gender == "F" ~ "Female",
+                                sex_gender == "M" ~ "Male",
+                                .default = sex_gender),
+         sfa_distal_pvs_pre_rpc = case_when(sfa_distal_pvs_pre_rpc == "N/A" ~ NA,
+                                            sfa_distal_pvs_pre_rpc == " " ~ NA,
+                                            .default = sfa_distal_pvs_pre_rpc),
+         sfa_distal_pvs_pre_rpc = as.numeric(sfa_distal_pvs_pre_rpc),
+         sfa_distal_pvs_post_rpc = case_when(sfa_distal_pvs_post_rpc == "N/A" ~ NA,
+                                            sfa_distal_pvs_post_rpc == " " ~ NA,
+                                            .default = sfa_distal_pvs_post_rpc),
+         sfa_distal_pvs_post_rpc = as.numeric(sfa_distal_pvs_post_rpc),
+         preop_abi_l = case_when(preop_abi_l == " " ~ NA,
+                                 preop_abi_l == "Non-compressible" ~ "2.00",
+                                 .default = preop_abi_l))
+         
+         ) %>%
+  mutate(sfa_distal_pvs_pre_rpc = )
+
+CreateTableOne(vars = c("age", "sex_gender", "hospital_length_of_stay", "distal_perfusion_cannula",
+                        "distal_perfusion_cannula_done_at_the_time_of_initial_mcs_implant",
+                        "sfa_distal_pvs_pre_rpc", "sfa_distal_pvs_post_rpc", "preop_abi_l",
+                        "preop_abi_r", "amputation", "fasciotomy", "mortality"), data = ecmo)
+```
+
