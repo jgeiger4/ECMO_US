@@ -3,7 +3,7 @@
 library(tidyverse)
 library(tidyREDCap)
 
-mcs<-read.csv("MCSDatabaseOngoing-Vascular_DATA_LABELS_2023-08-04_1632.csv")
+mcs<-read.csv("Initial_data/MCSDatabaseOngoing-Vascular_DATA_LABELS_2023-08-04_1632.csv")
 View(mcs)
 
 mcs_daily<-mcs[mcs["Repeat.Instrument"]=="Daily ICU",]

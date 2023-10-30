@@ -11,20 +11,53 @@ library(broom)
 library(janitor)
 library(readxl)
 library(tableone)
+library(ROCR)
 
-ecmo <- read_xlsx("raw_data/test_MCSDatabase_PSV_collection_MRN.xlsx") %>%
+ecmo <- read_xlsx("raw_data/VascularECMOdataset_10_27_23_mrn-2.xlsx") %>%
   clean_names()
 
 ```
+
+A total of `r length(unique(ecmo$e_mrn_x))` pateints were identified since January 2013 with a total of `r nrow(ecmo)` ecmo cannulations. The dataset was filtered for patietns > 18 years old who had peripheral VA - ECMO (Femoral cannulation).
 
 ##### Descriptive statistics
 
 ```{r data-cleaning, include=FALSE}
 
 ecmo <- ecmo %>%
-  mutate(sex_gender = case_when(sex_gender == "F" ~ "Female",
-                                sex_gender == "M" ~ "Male",
-                                .default = sex_gender),
+  mutate(sex_gender = case_when(sex == "F" ~ "Female",
+                                sex == "M" ~ "Male",
+                                .default = sex),
+####demographics          
+         age = as.numeric(age),
+
+#### comorbidities
+        COPD = case_when(x27_pre_existing_lung_disease_choice_copd_without_home_o2_requirement_x == 1 ~ "Yes",
+                         x27_pre_existing_lung_disease_choice_copd_with_home_o2_requirement_x == 1 ~ "Yes, Home O2",
+                         x27_pre_existing_lung_disease_choice_copd_without_home_o2_requirement_x == 0 ~ "No",
+                         x27_pre_existing_lung_disease_choice_copd_with_home_o2_requirement_x == 0 ~ "No",
+                         .default = NA),
+        DM = case_when(x31_past_medical_history_choice_diabetes_mellitus_x == 1 ~ "Yes",
+                       x31_past_medical_history_choice_diabetes_mellitus_x == 0 ~ "No",
+                       .default = NA),
+        HLD = case_when(x31_past_medical_history_choice_hyperlipidemia_x == 1 ~ "Yes",
+                       x31_past_medical_history_choice_hyperlipidemia_x == 0 ~ "No",
+                       .default = NA),
+        shock_cause = case_when(x46_etiology_of_shock_choice_cardiac_arrest_code_x == 1 ~ "Cardiac Arrest",
+                                x46_etiology_of_shock_choice_myocardial_infarction_left_x == 1 ~ "MI",
+                                x46_etiology_of_shock_choice_myocardial_infarction_right_x == 1 ~ "MI",
+                                x46_etiology_of_shock_choice_decompensated_nonischemic_cardiomyopathy_x == 1 ~ "NICM",
+                                .default = "Other"),
+#### US velocities
+        arterial_fr = case_when(x93_arterial_limb_access_1_cannula_size_x == "15 Fr" ~ 15,
+                                x93_arterial_limb_access_1_cannula_size_x == "16 Fr" ~ 16,
+                                x93_arterial_limb_access_1_cannula_size_x == "17 Fr" ~ 17,
+                                x93_arterial_limb_access_1_cannula_size_x == "18 Fr" ~ 18,
+                                x93_arterial_limb_access_1_cannula_size_x == "19 Fr" ~ 19,
+                                x93_arterial_limb_access_1_cannula_size_x == "20 Fr" ~ 20,
+                                x93_arterial_limb_access_1_cannula_size_x == "21 Fr" ~ 21,
+                                x93_arterial_limb_access_1_cannula_size_x == "22 Fr" ~ 22,
+                                .default = NA),
          sfa_distal_pvs_pre_rpc = case_when(sfa_distal_pvs_pre_rpc == "N/A" ~ NA,
                                             sfa_distal_pvs_pre_rpc == " " ~ NA,
                                             .default = sfa_distal_pvs_pre_rpc),
@@ -33,6 +66,8 @@ ecmo <- ecmo %>%
                                             sfa_distal_pvs_post_rpc == " " ~ NA,
                                             .default = sfa_distal_pvs_post_rpc),
          sfa_distal_pvs_post_rpc = as.numeric(sfa_distal_pvs_post_rpc),
+         sfa_distal_pvs = pmin(sfa_distal_pvs_pre_rpc, sfa_distal_pvs_post_rpc, na.rm = TRUE),
+
          ata_pvs_pre_rpc = case_when(ata_pvs_pre_rpc == "N/A" ~ NA,
                                             ata_pvs_pre_rpc == " " ~ NA,
                                             .default = ata_pvs_pre_rpc),
@@ -54,7 +89,7 @@ ecmo <- ecmo %>%
          tibial_pvs = pmin(ata_pvs_pre_rpc, ata_pvs_post_rpc, pta_pvs_pre_rpc,
                            pta_pvs_post_rpc,
                                       na.rm = TRUE),
-         
+
          preop_abi_l = case_when(preop_abi_l == " " ~ NA,
                                  preop_abi_l == "Non-compressible" ~ "2.00",
                                  .default = preop_abi_l),
@@ -63,6 +98,9 @@ ecmo <- ecmo %>%
                                  preop_abi_r == "Non-compressible" ~ "2.00",
                                  .default = preop_abi_r),
          preop_abi_r = as.numeric(preop_abi_r),
+ 
+#### outcomes
+         hospital_length_of_stay = as.numeric(hospital_length_of_stay),
          amputation_yn = case_when(amputation == 1 ~ "Yes",
                                    amputation == 0 ~ "No",
                                    .default = NA),
@@ -72,31 +110,84 @@ ecmo <- ecmo %>%
          mortality_yn = case_when(mortality == 1 ~ "Yes",
                                    mortality == 0 ~ "No",
                                    .default = NA),
-         sfa_distal_pvs = pmin(sfa_distal_pvs_pre_rpc, sfa_distal_pvs_post_rpc,
-                                      na.rm = TRUE)
-  )
+         limb_ischemia_yn = case_when(vascular_complication_type_choice_hypoperfusion_limb_ischemia == 1 ~ "Yes",
+                                     vascular_complication_type_choice_hypoperfusion_limb_ischemia == 0 ~ "No",
+                                     .default = NA),
+         ischemic_comp_yn = case_when(amputation_yn == "Yes" | fasciotomy_yn == "Yes" | limb_ischemia_yn == "Yes" ~ "Yes",
+                                     amputation_yn == "No" ~ "No",
+                                     fasciotomy_yn == "No" ~ "No",
+                                     limb_ischemia_yn == "No" ~ "No",
+                                     .default = NA)) %>%
+  mutate(pad_yn = case_when(pad == 1 ~ "Yes",
+                           preop_abi_l < 0.9 ~ "Yes",
+                           preop_abi_r < 0.9 ~ "Yes",
+                           pad == 0 ~ "No",
+                       .default = NA),
+          distal_perfusion_cannula_ever = case_when(distal_perfusion_cannula == "Yes" ~ "Yes",
+                                                      distal_perfusion_cannula == "No" ~ "No",
+                                                      .default = NA),
+          distal_perfusion_at_cannulation = case_when(distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "Yes" ~ "Yes",
+                                                      distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "No" ~ "No",
+                                                      .default = NA))
 
+
+ecmo <- ecmo %>%
+  mutate(femoral_cannulation = case_when(x91_arterial_limb_access_1_x == "Femoral Artery" ~ 1,
+                                         x91_arterial_limb_access_1_x == "Aorta (Central)" ~ 0,
+                                         initial_ecmo_mode == "V-A ECMO" ~ 1,
+                                         .default = NA),
+         ischemic_comp = case_when(ischemic_comp_yn == "Yes" ~ 1,
+                                   ischemic_comp_yn == "No" ~ 0,
+                                   .default = NA)) %>%
+  filter(age >= 18 & femoral_cannulation == 1)
 
 ```
 
-There are `r length(unique(ecmo$e_mrn))` subjects within the dataset. Of which there were `r nrow(filter(ecmo, amputation_yn == "Yes"))` amputations and `r nrow(filter(ecmo, fasciotomy_yn == "Yes"))` fasciotomies.
+There are `r length(unique(ecmo$e_mrn_x))` subjects within the dataset. Of which there were `r nrow(filter(ecmo, amputation_yn == "Yes"))` amputations and `r nrow(filter(ecmo, fasciotomy_yn == "Yes"))` fasciotomies.
 
-```{r tabl-1, echo=FALSE}
+```{r tabl-1-all, echo=FALSE}
 
-CreateTableOne(vars = c("age", "sex_gender", "hospital_length_of_stay",
-                        "distal_perfusion_cannula",
-                        "distal_perfusion_cannula_done_at_the_time_of_initial_mcs_implant",
+CreateTableOne(vars = c("age", "sex_gender", "COPD", "DM", "HLD", "hospital_length_of_stay",
+                        "pad_yn",
+                        "x38_smoking_tobacco_use_x",
+                        "shock_cause",
+                        "arterial_fr",
+                        "distal_perfusion_cannula_ever",
+                        "distal_perfusion_at_cannulation",
+                        "ischemic_comp_yn", "amputation_yn",
+                        "fasciotomy_yn", "limb_ischemia_yn",  "mortality_yn",
                         "sfa_distal_pvs_pre_rpc", "sfa_distal_pvs_post_rpc",
                         "ata_pvs_pre_rpc", "ata_pvs_post_rpc",
                         "pta_pvs_pre_rpc", "pta_pvs_post_rpc",
-                        "preop_abi_l", "preop_abi_r", "amputation_yn",
-                        "fasciotomy_yn", "mortality_yn", 
+                        "preop_abi_l", "preop_abi_r",
                         "sfa_distal_pvs", "tibial_pvs"), data = ecmo)
 
 ecmo %>%
-  group_by(fasciotomy_yn, amputation_yn) %>%
+  group_by(fasciotomy_yn, amputation_yn, vascular_complication_type_choice_hypoperfusion_limb_ischemia) %>%
   summarise(case_number = n())
 ```
+```{r table-1-ichemic}
+
+
+CreateTableOne(vars = c("age", "sex_gender", "COPD", "DM", "HLD", "hospital_length_of_stay",
+                        "pad_yn",
+                        "x38_smoking_tobacco_use_x",
+                        "shock_cause",
+                        "arterial_fr",
+                        "distal_perfusion_cannula_ever",
+                        "distal_perfusion_at_cannulation",
+                        "ischemic_comp_yn", "amputation_yn",
+                        "fasciotomy_yn", "limb_ischemia_yn",  "mortality_yn",
+                        "sfa_distal_pvs_pre_rpc", "sfa_distal_pvs_post_rpc",
+                        "ata_pvs_pre_rpc", "ata_pvs_post_rpc",
+                        "pta_pvs_pre_rpc", "pta_pvs_post_rpc",
+                        "preop_abi_l", "preop_abi_r",
+                        "sfa_distal_pvs", "tibial_pvs"
+                        ),
+              strata = "ischemic_comp_yn",
+              data = ecmo)
+```
+
 
 ```{r distributions, echo=FALSE}
 
@@ -131,6 +222,9 @@ ecmo %>%
 
 
 ecmo %>%
+  ggplot(aes(sfa_distal_pvs_pre_rpc, fill = ischemic_comp_yn)) +
+  geom_histogram()
+ecmo %>%
   ggplot(aes(sfa_distal_pvs, fill = fasciotomy_yn)) +
   geom_histogram()
 ecmo %>%
@@ -152,3 +246,23 @@ ecmo %>%
 
 
 ```
+
+```{r eval=FALSE, include=FALSE}
+
+# Fit the logistic regression model
+fit <- glm(is.numeric(ischemic_comp_yn) ~ sfa_distal_pvs, data = ecmo, family = binomial)
+
+# Generate predictions
+predictions <- predict(fit, type = "response")
+
+# Create a prediction object
+pred <- prediction(predict(fit), labels)
+
+# Create a performance object
+perf <- performance(pred, "tpr", "fpr")
+
+# Plot the ROC curve
+plot(perf)
+
+```
+
