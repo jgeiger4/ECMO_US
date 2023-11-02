@@ -38,7 +38,8 @@ mcs_clean<-mcs_daily %>%
   filter(row_number()==1) %>%
   select(-c("Limb.Ischemia.Requiring.Limb.Reperfusion.Cannula")) %>%
   rename(Days.to.Limb.Ischemia.Requiring.Limb.Reperfusion.Cannula = Repeat.Instance) %>%
-  right_join(mcs_clean)
+  right_join(mcs_clean) %>%
+  clean_names()
 
 View(mcs_clean[,-c(257:376)])
 View(mcs_clean %>% select(all_of(c("Record.ID",
@@ -51,14 +52,6 @@ View(mcs_clean %>% select(all_of(c("Record.ID",
                               "Distal.Perfusion.Cannula.",
                               "Distal.Perfusion.Cannula..Done.at.the.Time.of.Initial.MCS.Implant."))) %>%
        rename( Days.to.reperfusion.can = Days.to.Limb.Ischemia.Requiring.Limb.Reperfusion.Cannula,
-               reperfusion.at.initiation = Distal.Perfusion.Cannula..Done.at.the.Time.of.Initial.MCS.Implant.))
-
-"Outflow.cannula.size"                                                                                                            
-"Inflow.Cannulation.Site"                                                                                                         
-"Cannulation.Method..Inflow.Cannula"                                                                                              
-"Inflow.Cannula.Size"                                                                                                             
-"Left.Ventricular.Vent."                                                                                                          
-"Distal.Perfusion.Cannula."                                                                                                       
-"Distal.Perfusion.Cannula..Done.at.the.Time.of.Initial.MCS.Implant."                                                              
-"Distal.Perfusion.Cannula..Location"                                                                                              
-"Distal.Perfusion.Cannula..Cannula.Size" 
+               reperfusion.at.initiation = Distal.Perfusion.Cannula..Done.at.the.Time.of.Initial.MCS.Implant.)) %>%
+  clean_names()
+ 
