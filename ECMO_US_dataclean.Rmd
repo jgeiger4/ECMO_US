@@ -12,8 +12,10 @@ library(janitor)
 library(readxl)
 library(tableone)
 library(ROCR)
+library(stringr)
 
-ecmo <- read.csv("merge/test1_new_redcap_merge.csv") %>%
+ecmo <- read_xlsx("raw_data/VascularECMOdataset_11_5_23_mrn.xlsx",
+                 na = c("", "NA", ".", "9999", "Not applicable")) %>%
   clean_names()
 
 ```
@@ -32,10 +34,8 @@ ecmo <- ecmo %>%
          age = as.numeric(age),
 
 #### comorbidities
-        COPD = case_when(x27_pre_existing_lung_disease_choice_copd_without_home_o2_requirement_x == 1 ~ "Yes",
-                         x27_pre_existing_lung_disease_choice_copd_with_home_o2_requirement_x == 1 ~ "Yes, Home O2",
-                         x27_pre_existing_lung_disease_choice_copd_without_home_o2_requirement_x == 0 ~ "No",
-                         x27_pre_existing_lung_disease_choice_copd_with_home_o2_requirement_x == 0 ~ "No",
+        chronic_lung_disease = case_when(past_medical_history_choice_chronic_lung_disease == 1 ~ "Yes", 
+                                         past_medical_history_choice_chronic_lung_disease == 0 ~ "No",
                          .default = NA),
         DM = case_when(x31_past_medical_history_choice_diabetes_mellitus_x == 1 ~ "Yes",
                        x31_past_medical_history_choice_diabetes_mellitus_x == 0 ~ "No",
@@ -159,6 +159,20 @@ review <- ecmo %>%
                           .default = 0))
 us <- review %>%
   filter(us == 1)
+
+ecmo %>%
+  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+               names_prefix = "etiology_of_shock_choice_") %>%
+  filter(value == 1) %>%
+  right_join(ecmo)
+
+ecmo <- ecmo %>%
+  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
+               names_prefix = "indication_for_ecmo_choice_") %>%
+  filter(value == 1) %>%
+  right_join(ecmo)
 
 ```
 

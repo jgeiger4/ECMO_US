@@ -28,3 +28,18 @@ test1 <- mcs_clean %>%
   right_join(ecmo, by = join_by(e_mrn == e_mrn_x))
 
 write_csv(test1, "merge/test1_new_redcap_merge.csv")
+
+
+ecmo %>%
+  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+               names_prefix = "etiology_of_shock_choice_") %>%
+  filter(value == 1) %>%
+  right_join(ecmo)
+
+ecmo <- ecmo %>%
+  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
+               names_prefix = "indication_for_ecmo_choice_") %>%
+  filter(value == 1) %>%
+  right_join(ecmo)
