@@ -62,22 +62,32 @@ ecmo <- ecmo %>%
                                       type_of_anticoagulation_choice_lovenox_injections == 0 ~ "No",
                                     .default = NA),
 #### US velocities
-         sfa_distal_pvs = pmin(sfa_distal_pvs_on_ecmo_pre_rpc, sfa_distal_pvs_on_ecmo_post_rpc, na.rm = TRUE),
-         tibial_pvs_pre_cath_min = pmin(ata_pvs_on_ecmo_pre_rpc, pta_pvs_on_ecmo_pre_rpc,
-                                        peroneal_pvs_on_ecmo_pre_rpc,
-                                        na.rm = TRUE),
-          tibial_pvs_post_cath_min = pmin(ata_pvs_on_ecmo_post_rpc, pta_pvs_on_ecmo_post_rpc,
-                                peroneal_pvs_on_ecmo_post_rpc,
-                                na.rm = TRUE),
-          tibial_pvs_pre_cath_max = pmax(ata_pvs_on_ecmo_pre_rpc, pta_pvs_on_ecmo_pre_rpc,
-                                        peroneal_pvs_on_ecmo_pre_rpc,
-                                        na.rm = TRUE),
-          tibial_pvs_post_cath_max = pmax(ata_pvs_on_ecmo_post_rpc, pta_pvs_on_ecmo_post_rpc,
-                                peroneal_pvs_on_ecmo_post_rpc,
-                                na.rm = TRUE),
-          tibial_pvs_min = pmin(tibial_pvs_pre_cath_min, tibial_pvs_post_cath_min, na.rm = TRUE),
-          tibial_pvs_max = pmax(tibial_pvs_pre_cath_max, tibial_pvs_post_cath_max, na.rm = TRUE),
-
+         sfa_distal_psv = case_when(!is.na(sfa_distal_pvs_on_ecmo_pre_rpc) ~ sfa_distal_pvs_on_ecmo_pre_rpc,
+                                    !is.na(sfa_distal_pvs_on_ecmo_post_rpc) ~ sfa_distal_pvs_on_ecmo_post_rpc,
+                                    .default = NA),
+         sfa_mid_psv = case_when(!is.na(sfa_mid_pvs_on_ecmo_pre_rpc) ~ sfa_mid_pvs_on_ecmo_pre_rpc,
+                                    !is.na(sfa_mid_pvs_on_ecmo_post_rpc) ~ sfa_mid_pvs_on_ecmo_post_rpc,
+                                 .default = NA),
+         sfa_prox_psv = case_when(!is.na(sfa_prox_pvs_on_ecmo_pre_rpc) ~ sfa_prox_pvs_on_ecmo_pre_rpc,
+                                    !is.na(sfa_prox_pvs_on_ecmo_post_rpc) ~ sfa_prox_pvs_on_ecmo_post_rpc,
+                                  .default = NA),
+         sfa_prox_mid_psv = case_when(!is.na(sfa_prox_pvs_on_ecmo_pre_rpc) ~ sfa_prox_pvs_on_ecmo_pre_rpc,
+                             !is.na(sfa_mid_pvs_on_ecmo_pre_rpc) ~ sfa_mid_pvs_on_ecmo_pre_rpc,
+                             !is.na(sfa_prox_pvs_on_ecmo_post_rpc) ~ sfa_prox_pvs_on_ecmo_post_rpc,
+                             !is.na(sfa_mid_pvs_on_ecmo_post_rpc) ~ sfa_mid_pvs_on_ecmo_post_rpc,
+                             .default = NA),
+         ata_psv = case_when(!is.na(ata_pvs_on_ecmo_pre_rpc) ~ ata_pvs_on_ecmo_pre_rpc,
+                                    !is.na(ata_pvs_on_ecmo_post_rpc) ~ ata_pvs_on_ecmo_post_rpc),
+         pta_psv = case_when(!is.na(pta_pvs_on_ecmo_pre_rpc) ~ pta_pvs_on_ecmo_pre_rpc,
+                                    !is.na(pta_pvs_on_ecmo_post_rpc) ~ pta_pvs_on_ecmo_post_rpc),
+         peroneal_psv = case_when(!is.na(peroneal_pvs_on_ecmo_pre_rpc) ~ peroneal_pvs_on_ecmo_pre_rpc,
+                                    !is.na(peroneal_pvs_on_ecmo_post_rpc) ~ peroneal_pvs_on_ecmo_post_rpc),
+         peak_ankle_velocity = pmax(ata_psv, pta_psv, peroneal_psv, na.rm = TRUE),
+         femoral_at_gradient = sfa_prox_mid_psv - ata_psv,
+         femoral_pt_gradient = sfa_prox_mid_psv - pta_psv,
+         contra_sfa_psv = case_when(!is.na(contra_sfa_prox_pvs_on_ecmo_pre_rpc) ~ contra_sfa_prox_pvs_on_ecmo_pre_rpc,
+                                    !is.na(contra_sfa_prox_psv_on_ecmo_post_rpc) ~ contra_sfa_prox_psv_on_ecmo_post_rpc,
+                                  .default = NA),
          preop_abi_l = case_when(preop_abi_l == "Non-compressible" ~ "2.00",
                                  .default = preop_abi_l),
          preop_abi_l = as.numeric(preop_abi_l),
@@ -121,49 +131,18 @@ ecmo <- ecmo %>%
           distal_perfusion_cannula_ever = case_when(distal_perfusion_cannula == "Yes" ~ "Yes",
                                                       distal_perfusion_cannula == "No" ~ "No",
                                                       .default = NA),
-          distal_perfusion_at_cannulation = case_when(distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "Yes" ~ "Yes",
-                                                      distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "No" ~ "No",
-                                                      .default = NA),
-          same_side_inflow_outflow = case_when(outflow_cannulation_side == inflow_cannulation_side ~ "Yes",
+          distal_perfusion_at_cannulation =
+            case_when(distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "Yes" ~ "Yes",
+                      distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "No" ~ "No",
+                      .default = NA),
+            same_side_inflow_outflow = case_when(outflow_cannulation_side == inflow_cannulation_side ~ "Yes",
                                                outflow_cannulation_side != inflow_cannulation_side ~ "No",
                                                .default = NA)) %>%
   select(!etiology_of_shock_choice_cardiac_arrest_code) %>%
-  rename(rosc_prior_to_ecmo = return_of_spontaneous_circulation_rosc_prior_to_ecmo_deployment)
-
-### filter on age > 18 and femoral cannulation 
-ecmo <- ecmo %>%
-  mutate(femoral_cannulation = case_when(outflow_cannulation_site == "Femoral Artery" ~ 1,
-                                         outflow_cannulation_site == "Aorta (Central)" ~ 0,
-                                         outflow_cannulation_site == "Axillary Artery" ~ 0,
-                                         v_a_ecmo == "V-A ECMO" ~ 1,
-                                         .default = NA),
-         ischemic_comp = case_when(ischemic_comp_yn == "Yes" ~ 1,
-                                   ischemic_comp_yn == "No" ~ 0,
-                                   .default = NA)) %>%
-  filter(age >= 18 & femoral_cannulation == 1)
-
-### create a single variable with etiology of shock
-ecmo <- ecmo %>%
-  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
-  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
-               names_prefix = "etiology_of_shock_choice_") %>%
-  filter(value == 1) %>%
-  right_join(ecmo)
-
-## create a single variable with indication for ecmo
-ecmo <- ecmo %>%
-  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
-  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
-               names_prefix = "indication_for_ecmo_choice_") %>%
-  filter(value == 1) %>%
-  right_join(ecmo)
-
-# filter for records that have been reviewed and for one with US data
-review <- ecmo %>%
-  filter(is.na(chart_review_date) == FALSE) %>%
+  rename(rosc_prior_to_ecmo = return_of_spontaneous_circulation_rosc_prior_to_ecmo_deployment) %>%
   mutate(us = case_when(sfa_distal_pvs_on_ecmo_pre_rpc >= 0 ~ 1,
                         sfa_mid_pvs_on_ecmo_pre_rpc >= 0 ~ 1,
-                        sfa_distal_pvs_on_ecmo_pre_rpc >= 0 ~ 1,
+                        sfa_prox_pvs_on_ecmo_pre_rpc  >= 0 ~ 1,
                         pop_pvs_on_ecmo_pre_rpc >= 0 ~ 1,
                         peroneal_pvs_on_ecmo_pre_rpc >= 0 ~ 1,
                         ata_pvs_on_ecmo_pre_rpc >= 0 ~ 1,
@@ -176,11 +155,97 @@ review <- ecmo %>%
                         ata_pvs_on_ecmo_post_rpc >= 0 ~ 1,
                         pta_pvs_on_ecmo_post_rpc >= 0 ~ 1,
                           .default = 0),
-         etiology_of_shock = case_when(etiology_of_shock == "ards" ~ "other",
-                                       etiology_of_shock == "valvular_disease" ~ "other",
-                                       .default = etiology_of_shock))
+         reperfusion_cath_at_us = case_when(!is.na(sfa_distal_pvs_on_ecmo_pre_rpc) ~ 1,
+                        !is.na(sfa_mid_pvs_on_ecmo_pre_rpc) ~ 1,
+                        !is.na(sfa_prox_pvs_on_ecmo_pre_rpc) ~ 1,
+                        !is.na(pop_pvs_on_ecmo_pre_rpc) ~ 1,
+                        !is.na(peroneal_pvs_on_ecmo_pre_rpc) ~ 1,
+                        !is.na(ata_pvs_on_ecmo_pre_rpc) ~ 1,
+                        !is.na(pta_pvs_on_ecmo_pre_rpc) ~ 1,
+                          .default = 0)) %>%
+### calculate means across columns for velocities  
+  rowwise() %>%
+  mutate(mean_sfa_psv = mean(c_across(c(sfa_prox_psv, sfa_mid_psv, sfa_distal_psv)), na.rm = TRUE),
+         average_ankle_velocity = mean(c_across(c(ata_psv, pta_psv, peroneal_psv)), na.rm = TRUE)) 
 
-us <- review %>%
+### variable dependent on means
+ecmo <- ecmo %>%
+  mutate(contra_sfa_aav_gradiant = contra_sfa_psv - average_ankle_velocity)
+
+### identify etiology of shock duplicate values
+shock_duplicate <-  ecmo %>%
+  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+               names_prefix = "etiology_of_shock_choice_") %>%
+  filter(value == 1) %>%
+  group_by(study_record_id) %>%
+  summarise(n = n()) %>%
+  filter(n > 1)
+
+# remove "other" duplicates
+ecmo <- ecmo %>%
+  mutate(etiology_of_shock_choice_other = 
+           case_when(study_record_id %in% shock_duplicate$study_record_id ~ 0,
+                     etiology_of_shock_choice_post_cardiotomy_shock == 1 ~ 1,
+                     etiology_of_shock_choice_ards == 1 ~ 1,
+                     etiology_of_shock_choice_valvular_disease == 1 ~ 1,
+                     .default = etiology_of_shock_choice_other)) %>%
+  select(!etiology_of_shock_choice_post_cardiotomy_shock) %>%
+  select(!etiology_of_shock_choice_ards) %>%
+  select(!etiology_of_shock_choice_valvular_disease)
+ 
+### identify remaining etiology of shock duplicate values
+shock_duplicate <-  ecmo %>%
+  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+               names_prefix = "etiology_of_shock_choice_") %>%
+  filter(value == 1) %>%
+  group_by(study_record_id) %>%
+  summarise(n = n()) %>%
+  filter(n > 1)
+
+
+### filter on age > 18 and femoral cannulation 
+ecmo <- ecmo %>%
+  mutate(femoral_cannulation = 
+           case_when(outflow_cannulation_site == "Femoral Artery" ~ 1,
+                     outflow_cannulation_site == "Aorta (Central)" ~ 0,
+                     outflow_cannulation_site == "Axillary Artery" ~ 0,
+                     v_a_ecmo == "V-A ECMO" ~ 1,
+                     .default = NA),
+         ischemic_comp = case_when(ischemic_comp_yn == "Yes" ~ 1,
+                                   ischemic_comp_yn == "No" ~ 0,
+                                   .default = NA)) %>%
+  filter(age >= 18 & femoral_cannulation == 1)
+
+
+#ecmo %>%
+#  filter(study_record_id %in% shock_duplicate$study_record_id) %>%
+#  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+#  View()
+  
+ecmo <- ecmo %>%
+  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+               names_prefix = "etiology_of_shock_choice_") %>%
+  filter(value == 1) %>%
+  right_join(ecmo)
+
+
+## create a single variable with indication for ecmo
+ecmo <- ecmo %>%
+  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
+               names_prefix = "indication_for_ecmo_choice_") %>%
+  filter(value == 1) %>%
+  right_join(ecmo)
+
+# filter for records that have been reviewed and for one with US data
+review <- ecmo %>%
+  filter(is.na(chart_review_date) == FALSE)
+ 
+
+us <- ecmo %>%
   filter(us == 1)
 
 
@@ -195,27 +260,25 @@ There are `r length(unique(ecmo$e_mrn))` subjects within the dataset > 18 with p
 review <- review %>%
   mutate(us = as.factor(us))
 
-vars.descriptive <- c("age", "sex", "race_ethnicity", "bmi", "chronic_lung_disease", "DM", "HLD",
-                        "hospital_length_of_stay", "icu_los", "pad_yn",
-                        "smoking_tobacco_use", "anticoagulation",
-                        "shock_after_cardiac_arrest", "rosc_prior_to_ecmo",
-                      "etiology_of_shock",
-                      "mcs_length_of_support", "ecmo_length_of_support",
-                      "cannulation_location", "same_side_inflow_outflow",
-                        "outflow_cannula_size", "distal_perfusion_cannula_ever",
-                        "distal_perfusion_at_cannulation",
-                        "ischemic_comp_yn", "amputation_yn",
-                        "fasciotomy_yn", "limb_ischemia_yn",  "mortality_yn",
-                        "sfa_distal_pvs", "tibial_pvs_pre_cath_min",
-                      "tibial_pvs_pre_cath_max", "tibial_pvs_post_cath_min",
-                        "tibial_pvs_post_cath_max", "tibial_pvs_min",
-                      "ata_pvs_on_ecmo_pre_rpc", "pta_pvs_on_ecmo_pre_rpc",
-                      "peroneal_pvs_on_ecmo_pre_rpc","ata_pvs_on_ecmo_post_rpc",
-                      "pta_pvs_on_ecmo_post_rpc", "peroneal_pvs_on_ecmo_post_rpc",
-                      "tibial_pvs_max", "preop_abi_l", "preop_abi_r",
+vars.descriptive <- c("age", "sex", "race_ethnicity", "bmi", "chronic_lung_disease",
+                      "DM", "HLD", "hospital_length_of_stay", "icu_los", "pad_yn",
+                      "smoking_tobacco_use", "anticoagulation",
+                      "shock_after_cardiac_arrest", "rosc_prior_to_ecmo",
+                      "etiology_of_shock", "mcs_length_of_support",
+                      "ecmo_length_of_support", "cannulation_location",
+                      "same_side_inflow_outflow", "outflow_cannula_size",
+                      "distal_perfusion_cannula_ever",
+                      "distal_perfusion_at_cannulation", "ischemic_comp_yn",
+                      "amputation_yn", "fasciotomy_yn", "limb_ischemia_yn",
+                      "mortality_yn", "ata_psv", "pta_psv", "peroneal_psv",
+                      "peak_ankle_velocity", "femoral_at_gradient",
+                      "femoral_pt_gradient", "contra_sfa_psv", "mean_sfa_psv",
+                      "average_ankle_velocity", "contra_sfa_aav_gradiant",
+                      "preop_abi_l", "preop_abi_r",
                       "mean_arterial_pressure_map", "x48h_mean_arterial_pressure",
                       "x72h_mean_arterial_pressure", "vasoactive_inotropic_score",
-                      "p_h", "pa_co2", "pa_o2", "lactate", "ecmo_flow_at_initiation",
+                      "p_h", "pa_co2", "pa_o2", "lactate",
+                      "reperfusion_cath_at_us", "ecmo_flow_at_initiation",
                       "ecmo_flow_at_24h", "ecmo_flow_at_48h", "ecmo_flow_at_72h")
 CreateTableOne(vars.descriptive, data = us)
 
@@ -240,10 +303,8 @@ CreateTableOne(vars.descriptive,
 ```{r distributions-ischemic, echo=FALSE}
 
 us %>%
-  pivot_longer(c(sfa_distal_pvs:tibial_pvs_max, ata_pvs_on_ecmo_pre_rpc,
-                 pta_pvs_on_ecmo_pre_rpc, peroneal_pvs_on_ecmo_pre_rpc,
-                 ata_pvs_on_ecmo_post_rpc, pta_pvs_on_ecmo_post_rpc,
-                 peroneal_pvs_on_ecmo_post_rpc),
+  pivot_longer(c(ata_psv:contra_sfa_psv, mean_sfa_psv,
+                 average_ankle_velocity, contra_sfa_aav_gradiant),
                names_to = "US_location", values_to = "velocities") %>%
   ggplot(aes(x = velocities, fill = ischemic_comp_yn)) +
   geom_histogram() +
@@ -285,7 +346,7 @@ ecmo %>%
 ```{r table-1-mortality}
 CreateTableOne(vars.descriptive,
               strata = "mortality_yn",
-              data = ecmo)
+              data = us)
 ```
 
 #### Plots comparing variables between pateints who survived and those that did not
@@ -309,10 +370,8 @@ ecmo %>%
   theme(legend.position = "none")
   
 us %>%
-  pivot_longer(c(sfa_distal_pvs:tibial_pvs_max, ata_pvs_on_ecmo_pre_rpc,
-                 pta_pvs_on_ecmo_pre_rpc, peroneal_pvs_on_ecmo_pre_rpc,
-                 ata_pvs_on_ecmo_post_rpc, pta_pvs_on_ecmo_post_rpc,
-                 peroneal_pvs_on_ecmo_post_rpc),
+  pivot_longer(c(ata_psv:contra_sfa_psv, mean_sfa_psv,
+                 average_ankle_velocity, contra_sfa_aav_gradiant),
                names_to = "US_location", values_to = "velocities") %>%
   ggplot(aes(x = velocities, fill = mortality_yn)) +
   geom_density() +
@@ -360,7 +419,7 @@ ecmo %>%
 
 ```{r eval=FALSE, include=FALSE}
 
-ecmo.bst <- ecmo %>%
+ecmo.bst <- us %>%
   select(all_of(vars.descriptive))
 write_csv(ecmo.bst, "VascularECMOdataset_bst.csv")
 
