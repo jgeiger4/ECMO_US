@@ -6,6 +6,8 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
+options(width = 2000)
+
 library(tidyverse)
 library(broom)
 library(janitor)
@@ -13,6 +15,9 @@ library(readxl)
 library(tableone)
 library(ROCR)
 library(stringr)
+library(pROC)
+library(gtsummary)
+library(caret)
 
 ecmo <- read_xlsx("raw_data/VascularECMOdataset_11_5_23_mrn_cleaned.xlsx",
                  na = c("", "NA", ".", "9999", "Not applicable")) %>%
@@ -54,6 +59,18 @@ ecmo <- ecmo %>%
         shock_after_cardiac_arrest = case_when(etiology_of_shock_choice_cardiac_arrest_code == 1 ~ "Yes",
                                 etiology_of_shock_choice_cardiac_arrest_code == 0 ~ "No",
                                 .default = NA),
+        cardiogenic_shock = case_when(indication_for_ecmo_choice_cardiogenic_shock == 1 ~ "Yes",
+                                      indication_for_ecmo_choice_mixed_shock == 1 ~ "Yes",
+                                      shock_after_cardiac_arrest == "Yes" ~ "Yes",
+                                      etiology_of_shock_choice_decompensated_ischemic_cardiomyopathy == 1 ~ "Yes",
+                                      etiology_of_shock_choice_decompensated_nonischemic_cardiomyopathy == 1 ~ "Yes",
+                                      etiology_of_shock_choice_heart_failure == 1 ~ "Yes",
+                                      etiology_of_shock_choice_myocardial_infarction == 1 ~ "Yes",
+                                      .default = "No"),
+        smoking_tobacco_use = case_when(smoking_tobacco_use %in% c("None", "none") ~ "None",
+                                        smoking_tobacco_use %in% c("remote", "Remote") ~ "Remote",
+                                        str_detect(smoking_tobacco_use, "Recent") ~ "Recent",
+                                        .default = NA),
         anticoagulation = case_when(type_of_anticoagulation_choice_bivalirudin_drip == 1 ~ "Yes",
                                     type_of_anticoagulation_choice_heparin_drip == 1 ~ "Yes",
                                     type_of_anticoagulation_choice_lovenox_injections == 1 ~ "Yes",
@@ -83,8 +100,10 @@ ecmo <- ecmo %>%
          peroneal_psv = case_when(!is.na(peroneal_pvs_on_ecmo_pre_rpc) ~ peroneal_pvs_on_ecmo_pre_rpc,
                                     !is.na(peroneal_pvs_on_ecmo_post_rpc) ~ peroneal_pvs_on_ecmo_post_rpc),
          peak_ankle_velocity = pmax(ata_psv, pta_psv, peroneal_psv, na.rm = TRUE),
+         log_pav = log(peak_ankle_velocity +1),
          femoral_at_gradient = sfa_prox_mid_psv - ata_psv,
          femoral_pt_gradient = sfa_prox_mid_psv - pta_psv,
+         max_femoral_pt_at_gradient = pmax(femoral_at_gradient, femoral_pt_gradient, na.rm = TRUE),
          contra_sfa_psv = case_when(!is.na(contra_sfa_prox_pvs_on_ecmo_pre_rpc) ~ contra_sfa_prox_pvs_on_ecmo_pre_rpc,
                                     !is.na(contra_sfa_prox_psv_on_ecmo_post_rpc) ~ contra_sfa_prox_psv_on_ecmo_post_rpc,
                                   .default = NA),
@@ -110,15 +129,24 @@ ecmo <- ecmo %>%
          mortality_yn = case_when(mortality == 1 ~ "Yes",
                                    mortality == 0 ~ "No",
                                    .default = NA),
+#create variable of death while on ecmo
+         ecmo_mortality_yn = case_when(str_detect(survival_status_mcs_hospitalization,
+                                                  "Died on MCS") ~ 1,
+                                       mortality_date <= ecmo_discontinuation_date_time ~ 1,
+                                       str_detect(survival_status_mcs_hospitalization,
+                                                  "explant") ~ 0,
+                                       mortality_date > ecmo_discontinuation_date_time ~ 0,
+                                       mortality == 0 ~ 0,
+                                       .default = NA),
          limb_ischemia_yn = case_when(hypoperfusion_limb_ischemia == 1 ~ "Yes",
                                       fasciotomy == 1 ~ "Yes",
                                       hypoperfusion_limb_ischemia == 0 ~ "No",
                                       fasciotomy == 0 ~ "No",
                                      .default = NA),
-         ischemic_comp_yn = case_when(amputation_yn == "Yes" | fasciotomy_yn == "Yes" | limb_ischemia_yn == "Yes" ~ "Yes",
-                                     amputation_yn == "No" ~ "No",
-                                     fasciotomy_yn == "No" ~ "No",
-                                     limb_ischemia_yn == "No" ~ "No",
+         ischemic_comp_yn = case_when(amputation_yn == "Yes" | fasciotomy_yn == "Yes" | limb_ischemia_yn == "Yes" ~ 1,
+                                     amputation_yn == "No" ~ 0,
+                                     fasciotomy_yn == "No" ~ 0,
+                                     limb_ischemia_yn == "No" ~ 0,
                                      .default = NA)) %>%
   ### more comorbidities
         mutate(pad_yn = case_when(pad == 1 ~ "Yes",
@@ -131,11 +159,7 @@ ecmo <- ecmo %>%
           distal_perfusion_cannula_ever = case_when(distal_perfusion_cannula == "Yes" ~ "Yes",
                                                       distal_perfusion_cannula == "No" ~ "No",
                                                       .default = NA),
-          distal_perfusion_at_cannulation =
-            case_when(distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "Yes" ~ "Yes",
-                      distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "No" ~ "No",
-                      .default = NA),
-            same_side_inflow_outflow = case_when(outflow_cannulation_side == inflow_cannulation_side ~ "Yes",
+          same_side_inflow_outflow = case_when(outflow_cannulation_side == inflow_cannulation_side ~ "Yes",
                                                outflow_cannulation_side != inflow_cannulation_side ~ "No",
                                                .default = NA)) %>%
   select(!etiology_of_shock_choice_cardiac_arrest_code) %>%
@@ -162,7 +186,12 @@ ecmo <- ecmo %>%
                         !is.na(peroneal_pvs_on_ecmo_pre_rpc) ~ 1,
                         !is.na(ata_pvs_on_ecmo_pre_rpc) ~ 1,
                         !is.na(pta_pvs_on_ecmo_pre_rpc) ~ 1,
-                          .default = 0)) %>%
+                          .default = 0),
+         distal_perfusion_at_cannulation =
+            case_when(distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "Yes" ~ "Yes",
+                      distal_perfusion_cannula_done_at_the_time_of_initial_cannulation == "No" ~ "No",
+                      reperfusion_cath_at_us == 0 ~ "No",
+                      .default = NA)) %>%
 ### calculate means across columns for velocities  
   rowwise() %>%
   mutate(mean_sfa_psv = mean(c_across(c(sfa_prox_psv, sfa_mid_psv, sfa_distal_psv)), na.rm = TRUE),
@@ -194,16 +223,6 @@ ecmo <- ecmo %>%
   select(!etiology_of_shock_choice_ards) %>%
   select(!etiology_of_shock_choice_valvular_disease)
  
-### identify remaining etiology of shock duplicate values
-shock_duplicate <-  ecmo %>%
-  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
-  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
-               names_prefix = "etiology_of_shock_choice_") %>%
-  filter(value == 1) %>%
-  group_by(study_record_id) %>%
-  summarise(n = n()) %>%
-  filter(n > 1)
-
 
 ### filter on age > 18 and femoral cannulation 
 ecmo <- ecmo %>%
@@ -218,43 +237,69 @@ ecmo <- ecmo %>%
                                    .default = NA)) %>%
   filter(age >= 18 & femoral_cannulation == 1)
 
+# filter for records that have been reviewed and for one with US data
+review <- ecmo %>%
+  filter(is.na(chart_review_date) == FALSE)
+ 
+us <- ecmo %>%
+  filter(us == 1)
+
+```
+
+```{r shock-vars, include=FALSE}
+# filter etiology_of_shock_choice
+
+### identify remaining etiology of shock duplicate values
+#shock_duplicate <-  us %>%
+#  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+#  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+#               names_prefix = "etiology_of_shock_choice_") %>%
+#  filter(value == 1) %>%
+#  group_by(study_record_id) %>%
+#  summarise(n = n()) %>%
+#  filter(n > 1)
+
+#us %>%
+#  filter(study_record_id %in% shock_duplicate$study_record_id) %>%
+#  select(study_record_id, e_mrn, all_of(starts_with("etiology_of_shock"))) %>%
+#  View()
+
+us <- us %>%
+  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
+               names_prefix = "etiology_of_shock_choice_") %>%
+  filter(value == 1) %>%   
+  right_join(us)
+
+
+## create a single variable with indication for ecmo
+us <- us %>%
+  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
+               names_prefix = "indication_for_ecmo_choice_") %>%
+  filter(value == 1) %>%
+  right_join(us)
+
+indication_duplicate <-  us %>%
+  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
+  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
+               names_prefix = "indication_for_ecmo_choice_") %>%
+  filter(value == 1) %>%
+  group_by(study_record_id) %>%
+  summarise(n = n()) %>%
+  filter(n > 1)
 
 #ecmo %>%
 #  filter(study_record_id %in% shock_duplicate$study_record_id) %>%
 #  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
 #  View()
-  
-ecmo <- ecmo %>%
-  select(c(starts_with("etiology_of_shock_choice"), study_record_id)) %>%
-  pivot_longer(cols = starts_with("etiology_of_shock_choice"), names_to = "etiology_of_shock",
-               names_prefix = "etiology_of_shock_choice_") %>%
-  filter(value == 1) %>%
-  right_join(ecmo)
-
-
-## create a single variable with indication for ecmo
-ecmo <- ecmo %>%
-  select(c(starts_with("indication_for_ecmo_choice"), study_record_id)) %>%
-  pivot_longer(cols = starts_with("indication_for_ecmo_choice"), names_to = "indication_for_ecmo",
-               names_prefix = "indication_for_ecmo_choice_") %>%
-  filter(value == 1) %>%
-  right_join(ecmo)
-
-# filter for records that have been reviewed and for one with US data
-review <- ecmo %>%
-  filter(is.na(chart_review_date) == FALSE)
- 
-
-us <- ecmo %>%
-  filter(us == 1)
-
 
 
 ```
 
 There are `r length(unique(ecmo$e_mrn))` subjects within the dataset > 18 with peripheral cannulations. Of which `r length(unique(review$e_mrn))` have been chart reviewed and `r sum(review$us)` had a doppler US assessment of the extremity ipsilateral to the canulation site. With in these patients there were `r nrow(filter(ecmo, amputation_yn == "Yes"))` amputations and `r nrow(filter(ecmo, fasciotomy_yn == "Yes"))` fasciotomies.  
 
-#### Characteristics of pateints with ultrasound data
+### Characteristics of pateints with ultrasound data
 
 ```{r tabl-1-all, echo=FALSE}
 review <- review %>%
@@ -263,16 +308,17 @@ review <- review %>%
 vars.descriptive <- c("age", "sex", "race_ethnicity", "bmi", "chronic_lung_disease",
                       "DM", "HLD", "hospital_length_of_stay", "icu_los", "pad_yn",
                       "smoking_tobacco_use", "anticoagulation",
-                      "shock_after_cardiac_arrest", "rosc_prior_to_ecmo",
+                      "shock_after_cardiac_arrest", "cardiogenic_shock", "rosc_prior_to_ecmo",
                       "etiology_of_shock", "mcs_length_of_support",
                       "ecmo_length_of_support", "cannulation_location",
                       "same_side_inflow_outflow", "outflow_cannula_size",
                       "distal_perfusion_cannula_ever",
                       "distal_perfusion_at_cannulation", "ischemic_comp_yn",
                       "amputation_yn", "fasciotomy_yn", "limb_ischemia_yn",
-                      "mortality_yn", "ata_psv", "pta_psv", "peroneal_psv",
-                      "peak_ankle_velocity", "femoral_at_gradient",
-                      "femoral_pt_gradient", "contra_sfa_psv", "mean_sfa_psv",
+                      "mortality_yn", "ecmo_mortality_yn", "ata_psv", "pta_psv", "peroneal_psv",
+                      "peak_ankle_velocity", "log_pav",  "femoral_at_gradient",
+                      "femoral_pt_gradient", "max_femoral_pt_at_gradient",
+                      "contra_sfa_psv", "mean_sfa_psv",
                       "average_ankle_velocity", "contra_sfa_aav_gradiant",
                       "preop_abi_l", "preop_abi_r",
                       "mean_arterial_pressure_map", "x48h_mean_arterial_pressure",
@@ -283,44 +329,158 @@ vars.descriptive <- c("age", "sex", "race_ethnicity", "bmi", "chronic_lung_disea
 CreateTableOne(vars.descriptive, data = us)
 
 ```
-#### Comparision between pateints with and without ischemic complications in patients with ultrasound data
 
-```{r table-1-ichemic-us}
+### Comparision between pateints with and without ischemic complications in patients with ultrasound data
+
+```{r table-1-ischemic-us, echo=FALSE}
 CreateTableOne(vars.descriptive,
               strata = "ischemic_comp_yn",
               data = us)
 ```
+
+#### Short table
+
+```{r table-1-ischemic-us-short, echo=FALSE}
+vars.us.ischemic <- c("etiology_of_shock", "cannulation_location",
+                      "outflow_cannula_size",
+                      "distal_perfusion_at_cannulation", "same_side_inflow_outflow",
+                      "peak_ankle_velocity", "log_pav", "max_femoral_pt_at_gradient",
+                      "average_ankle_velocity", "contra_sfa_aav_gradiant")
+CreateTableOne(vars.us.ischemic, data = us,
+               strata = c("ischemic_comp_yn"),
+               argsNonNormal = "outflow_cannula_size")
+
+vars.us.rpc <- c("smoking_tobacco_use", "etiology_of_shock",
+                      "ischemic_comp_yn", "log_pav",
+                      "peak_ankle_velocity", "max_femoral_pt_at_gradient",
+                      "contra_sfa_aav_gradiant", "same_side_inflow_outflow")
+CreateTableOne(vars.us.rpc, data = us,
+               strata = c("distal_perfusion_at_cannulation"))
+
+
+CreateTableOne("log_pav", data = filter(us, distal_perfusion_at_cannulation == "Yes"),
+               strata = c("ischemic_comp_yn"))
+
+CreateTableOne("log_pav", data = filter(us, same_side_inflow_outflow == "No"),
+               strata = c("ischemic_comp_yn"))
+CreateTableOne("log_pav", data = filter(us, same_side_inflow_outflow == "Yes"),
+               strata = c("ischemic_comp_yn"))
+
+```
+
 #### Comparision between pateints with and without ischemic complications in the entire data set
 
-```{r table-1-ichemic-all}
+```{r table-1-ichemic-all, eval=FALSE, include=FALSE}
 CreateTableOne(vars.descriptive,
               strata = "ischemic_comp_yn",
               data = ecmo)
               
 ```
+
 #### Plots comparing variables between pateints with and without ischemic complications
 
 ```{r distributions-ischemic, echo=FALSE}
 
 us %>%
-  pivot_longer(c(ata_psv:contra_sfa_psv, mean_sfa_psv,
-                 average_ankle_velocity, contra_sfa_aav_gradiant),
+  pivot_longer(c(peak_ankle_velocity, max_femoral_pt_at_gradient,
+                      average_ankle_velocity, contra_sfa_aav_gradiant),
                names_to = "US_location", values_to = "velocities") %>%
-  ggplot(aes(x = velocities, fill = ischemic_comp_yn)) +
+  ggplot(aes(x = velocities )) +
   geom_histogram() +
-  facet_wrap(vars(US_location), scales = "free_y") +
-  theme_minimal() +
-  theme(legend.position = "bottom")
+  facet_wrap(vars(US_location), scales = "free") +
+  theme_minimal() 
 
-ecmo %>%
-  ggplot(aes(bmi, fill = ischemic_comp_yn)) +
+us %>%
+  pivot_longer(c(peak_ankle_velocity, max_femoral_pt_at_gradient,
+                      average_ankle_velocity, contra_sfa_aav_gradiant),
+               names_to = "US_location", values_to = "velocities") %>%
+  ggplot(aes(x = log(velocities + 1))) +
+  geom_histogram() +
+  facet_wrap(vars(US_location), scales = "free") +
+  theme_minimal() 
+
+us %>%
+  pivot_longer(peak_ankle_velocity,
+               names_to = "US_location", values_to = "velocities") %>%
+  ggplot(aes(y = log(velocities + 1), x = as.factor(ischemic_comp_yn),
+             fill = as.factor(ischemic_comp_yn))) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(legend.position = "None") +
+  xlab("Ischemic Complication")
+
+us %>%
+  ggplot(aes(as.factor(ischemic_comp_yn), outflow_cannula_size)) +
+  geom_boxplot() +
+  theme_bw() +
+  xlab("BMI") +
+  theme(legend.position = "none")
+
+us %>%
+  ggplot(aes(y = outflow_cannula_size, x = as.factor(ischemic_comp_yn))) +
+  geom_boxplot() +
+  geom_point(position=position_dodge(width=0.75), aes(group=ischemic_comp_yn)) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  xlab("Ischemic Complication") + 
+  scale_fill_discrete(name = "Ischemic Complications",
+                      labels = c("No", "Yes"))
+
+
+us %>%
+  pivot_longer(peak_ankle_velocity,
+               names_to = "US_location", values_to = "velocities") %>%
+  select(ischemic_comp_yn, velocities, US_location,
+         distal_perfusion_at_cannulation) %>%
+  na.omit() %>%
+  ggplot(aes(y = log(velocities + 1), x = as.factor(distal_perfusion_at_cannulation),
+             fill = as.factor(ischemic_comp_yn))) +
+  geom_boxplot() +
+  geom_point(position=position_dodge(width=0.75),aes(group=ischemic_comp_yn)) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  xlab("RP Catheter at Cannulation") + 
+  scale_fill_discrete(name = "Ischemic Complications",
+                      labels = c("No", "Yes"))
+
+us %>%
+  pivot_longer(peak_ankle_velocity,
+               names_to = "US_location", values_to = "velocities") %>%
+  select(ischemic_comp_yn, velocities, US_location,
+         same_side_inflow_outflow) %>%
+  na.omit() %>%
+  ggplot(aes(y = log(velocities + 1), x = as.factor(same_side_inflow_outflow),
+             fill = as.factor(ischemic_comp_yn))) +
+  geom_boxplot() +
+  geom_point(position=position_dodge(width=0.75),aes(group=ischemic_comp_yn)) +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  xlab("Same Sided Arterial and Venous Cannula") + 
+  scale_fill_discrete(name = "Ischemic Complications",
+                      labels = c("No", "Yes"))
+
+
+  ggplot(data = us, aes(y = log_pav, x = outflow_cannula_size,
+             color = as.factor(ischemic_comp_yn))) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  theme_minimal() +
+  theme(legend.position = "bottom") +
+  xlab("Arterial Cannula Size") + 
+  scale_color_discrete(name = "Ischemic Complications",
+                      labels = c("No", "Yes")) +
+    ylab("log(velocities + 1)")
+
+
+us %>%
+  ggplot(aes(bmi, fill = as.factor(ischemic_comp_yn))) +
   geom_histogram(position = "dodge", identity = "stat") +
   facet_grid(ischemic_comp_yn ~ ., scales = "free_y") +
   theme_bw() +
   xlab("BMI") +
   theme(legend.position = "none")
   
-ecmo %>%
+us %>%
   pivot_longer(ecmo_flow_at_initiation:ecmo_flow_at_72h,
                names_to = "ecmo_time", values_to = "flow") %>%
   ggplot(aes(x = flow, fill = ischemic_comp_yn)) +
@@ -329,7 +489,7 @@ ecmo %>%
   theme_minimal() +
   theme(legend.position = "bottom")
   
-ecmo %>%
+us %>%
   pivot_longer(c(mean_arterial_pressure_map, x48h_mean_arterial_pressure,
                  x72h_mean_arterial_pressure),
                names_to = "map_time", values_to = "map") %>%
@@ -341,28 +501,55 @@ ecmo %>%
 
   
 ```
-#### Comparision between pateints who survived and those that did not in the whole data set
 
-```{r table-1-mortality}
+
+### Comparision between pateints who survived EMCO and those that did not
+
+```{r table-1-mortality, echo=FALSE}
 CreateTableOne(vars.descriptive,
-              strata = "mortality_yn",
+              strata = "ecmo_mortality_yn",
               data = us)
 ```
+
+#### Short Table
+
+```{r table-1-mortality-short, echo=FALSE}
+vars.us.mort <- c("age", "sex","anticoagulation",
+                      'peak_ankle_velocity', 'log_pav', 'max_femoral_pt_at_gradient',
+                  'contra_sfa_psv', 'mean_sfa_psv',
+                      'average_ankle_velocity')
+CreateTableOne(vars.us.mort, data = us,
+               strata = c("ecmo_mortality_yn"),
+               argsNonNormal = c('peak_ankle_velocity', 'max_femoral_pt_at_gradient',
+                  'contra_sfa_psv', 'mean_sfa_psv',
+                      'average_ankle_velocity'))
+```
+
 
 #### Plots comparing variables between pateints who survived and those that did not
 
 ```{r distributions-mortality, echo=FALSE}
 
-ecmo %>%
-  ggplot(aes(age, fill = mortality_yn)) +
+us %>%
+  pivot_longer(peak_ankle_velocity,
+               names_to = "US_location", values_to = "velocities") %>%
+  ggplot(aes(y = log(velocities + 1), x = as.factor(ecmo_mortality_yn),
+             fill = as.factor(ecmo_mortality_yn))) +
+  geom_boxplot() +
+  theme_minimal() +
+  theme(legend.position = "None") +
+  xlab("On EMCO Mortality")
+
+us %>%
+  ggplot(aes(age, fill = ecmo_mortality_yn)) +
   geom_histogram(position = "dodge", identity = "stat") +
   facet_grid(mortality_yn ~ ., scales = "free_y") +
   theme_bw() +
   xlab("Age") +
   theme(legend.position = "none")
 
-ecmo %>%
-  ggplot(aes(bmi, fill = mortality_yn)) +
+us %>%
+  ggplot(aes(bmi, fill = ecmo_mortality_yn)) +
   geom_histogram(position = "dodge", identity = "stat") +
   facet_grid(mortality_yn ~ ., scales = "free_y") +
   theme_bw() +
@@ -373,30 +560,30 @@ us %>%
   pivot_longer(c(ata_psv:contra_sfa_psv, mean_sfa_psv,
                  average_ankle_velocity, contra_sfa_aav_gradiant),
                names_to = "US_location", values_to = "velocities") %>%
-  ggplot(aes(x = velocities, fill = mortality_yn)) +
+  ggplot(aes(x = velocities, fill = ecmo_mortality_yn)) +
   geom_density() +
   facet_wrap(vars(US_location), scales = "free_y") +
   theme_minimal() +
   theme(legend.position = "bottom")
 
-ecmo %>%
-  ggplot(aes(p_h, fill = mortality_yn)) +
+us %>%
+  ggplot(aes(p_h, fill = ecmo_mortality_yn)) +
   geom_histogram(position = "dodge", identity = "stat") +
-  facet_grid(mortality_yn ~ ., scales = "free_y") +
+  facet_grid(ecmo_mortality_yn ~ ., scales = "free_y") +
   theme_bw() +
   xlab("pH") +
   theme(legend.position = "none")
 
-ecmo %>%
-  ggplot(aes(lactate, fill = mortality_yn)) +
+us %>%
+  ggplot(aes(lactate, fill = ecmo_mortality_yn)) +
   geom_histogram(position = "dodge", identity = "stat") +
-  facet_grid(mortality_yn ~ ., scales = "free_y") +
+  facet_grid(ecmo_mortality_yn ~ ., scales = "free_y") +
   theme_bw() +
   xlab("Lactate") +
   theme(legend.position = "none")
 
 
-ecmo %>%
+us %>%
   pivot_longer(ecmo_flow_at_initiation:ecmo_flow_at_72h,
                names_to = "ecmo_time", values_to = "flow") %>%
   ggplot(aes(x = flow, fill = mortality_yn)) +
@@ -405,7 +592,7 @@ ecmo %>%
   theme_bw() +
   theme(legend.position = "bottom")
   
-ecmo %>%
+us %>%
   pivot_longer(c(mean_arterial_pressure_map, x48h_mean_arterial_pressure,
                  x72h_mean_arterial_pressure),
                names_to = "map_time", values_to = "map") %>%
@@ -415,28 +602,277 @@ ecmo %>%
   theme_bw() +
   theme(legend.position = "bottom")
 ```
+## Regression Analysis and Prediction
+
+### Prediction of Ischemic events while on ECMO
+
+#### Univariate Regression
+
+```{r univar-logistic-regression-ischemia, echo=FALSE}
+# mortality univariate
+uni_models <- vars.descriptive %>%                           # begin with variables of interest
+  str_c("ischemic_comp_yn ~ ", .) %>%  # combine each variable into formula ("outcome ~ variable of interest")
+  
+  # iterate through each univariate formula
+  map(
+    .f = ~glm(                            # pass the formulas one-by-one to glm()
+    formula = as.formula(.x),             # within glm(), the string formula is .x
+    family = "binomial",                  # specify type of glm (logistic)
+                data = us)) %>%    # dataset
+# tidy up each of the glm regression outputs from above
+  map(.f = ~tidy(.x,
+                 exponentiate = TRUE,
+                 conf.int = TRUE)) %>%
+ # collapse the list of regression outputs in to one data frame
+  bind_rows() %>%
+# round all numeric columns
+  mutate(across(where(is.numeric), round, digits = 5))
+    
+uni_models %>%
+    filter(term != "(Intercept)" & p.value < 0.2) %>%
+  print(n = nrow(uni_models))
+
+#correlation_matrix <- rcorr(as.matrix(uni_var_vqi_data_num), type = "pearson")
+#view(correlation_matrix)
+#ggpairs(uni_var_vqi_data_num)
+
+data_cov_uni <- c("race_ethnicity", "same_side_inflow_outflow", "outflow_cannula_size",
+                  "log_pav", "distal_perfusion_at_cannulation")
+
+univ_tab <- us %>% 
+  dplyr::select(all_of(data_cov_uni), outcome = ischemic_comp_yn) %>% ## select variables of interest
+
+  tbl_uvregression(                         ## produce univariate table
+    method = glm,                           ## define regression want to run (generalised linear model)
+    y = outcome,                            ## define outcome variable
+    method.args = list(family = binomial),  ## define what type of glm want to run (logistic)
+    exponentiate = TRUE                     ## exponentiate to produce odds ratios (rather than log odds)
+  )
+
+## view univariate results table 
+univ_tab
+
+
+```
+#### Multivariate Logistic Regression
+
+```{r multivar-logistic-regression-ischemia, echo=FALSE}
+
+## run a regression with all variables of interest 
+mv_reg <- data_cov_uni %>%  ## begin with vector of explanatory column names
+  str_c(collapse = "+") %>%     ## combine all names of the variables of interest separated by a plus
+  str_c("ischemic_comp_yn ~ ", .) %>%    ## combine the names of variables of interest with outcome in formula style
+  glm(family = "binomial",      ## define type of glm as logistic,
+      data = us)          ## define your dataset
+
+
+model_ischemic_full <- 
+  glm(ischemic_comp_yn ~ race_ethnicity + same_side_inflow_outflow +
+        outflow_cannula_size + log_pav + distal_perfusion_at_cannulation,
+      data = us)
+summary(model_ischemic_full)
+
+model_ischemic_step <- 
+  glm(ischemic_comp_yn ~ race_ethnicity + same_side_inflow_outflow +
+        outflow_cannula_size + log_pav + distal_perfusion_at_cannulation,
+      data = us,
+      na.action = "na.exclude")
+summary(model_ischemic_step)
+
+
+confusionMatrix(as.factor(ifelse(fitted(model_ischemic_step) > .5, "Yes", "No")),
+                reference = as.factor(ifelse(us$ischemic_comp_yn == 1, "Yes", "No")),
+                positive = "Yes")
+
+invisible(plot(roc(model_ischemic_step$y,
+                   model_ischemic_step$fitted.values),
+               print.auc = T, 
+               col = "blue"))
+
+library(arm)
+#likelihood ratio test for different models as needed
+#lrtest()
+
+#This binned plot looks bad
+binnedplot(na.omit(fitted(model_ischemic_step)), 
+          na.omit(residuals(model_ischemic_step, type = "response")), 
+           nclass = NULL, 
+           xlab = "Expected Values", 
+           ylab = "Average residual", 
+           main = "Binned residual plot", 
+           cex.pts = 0.8, 
+           col.pts = 1, 
+          col.int = "gray")
+
+detach("package:arm", unload = TRUE)
+detach("package:MASS", unload = TRUE)
+
+mv_tab_base <- model_ischemic_step %>% 
+  broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>%  ## get a tidy dataframe of estimates 
+  mutate(across(where(is.numeric), round, digits = 4))
+
+mv_tab <- tbl_regression(model_ischemic_step, exponentiate = TRUE)
+mv_tab
+
+tbl_merge(
+  tbls = list(univ_tab, mv_tab),                          # combine
+  tab_spanner = c("**Univariate**", "**Multivariable**")) # set header names
+
+```
+
+#### ROC Curve for Log Peak Ankle Velocity to Predict Ischemia
+```{r roc-logpav-ischemia, echo=FALSE}
+
+pROC_obj <- us %>%
+  roc_(as.factor("ischemic_comp_yn"),'log_pav' ,
+       smoothed = TRUE,
+            # arguments for ci
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+
+```
+
+### Prediction of Mortality while on ECMO
+
+#### Univariate Regression
+
+```{r univar-logistic-regression-mortality, echo=FALSE}
+# mortality univariate
+uni_models <- vars.descriptive %>%                           # begin with variables of interest
+  str_c("ecmo_mortality_yn ~ ", .) %>%  # combine each variable into formula ("outcome ~ variable of interest")
+  
+  # iterate through each univariate formula
+  map(
+    .f = ~glm(                            # pass the formulas one-by-one to glm()
+    formula = as.formula(.x),             # within glm(), the string formula is .x
+    family = "binomial",                  # specify type of glm (logistic)
+                data = us)) %>%    # dataset
+# tidy up each of the glm regression outputs from above
+  map(.f = ~tidy(.x,
+                 exponentiate = TRUE,
+                 conf.int = TRUE)) %>%
+ # collapse the list of regression outputs in to one data frame
+  bind_rows() %>%
+# round all numeric columns
+  mutate(across(where(is.numeric), round, digits = 5))
+    
+uni_models %>%
+    filter(term != "(Intercept)" & p.value < 0.1) %>%
+  print(n = nrow(uni_models))
+
+#correlation_matrix <- rcorr(as.matrix(uni_var_vqi_data_num), type = "pearson")
+#view(correlation_matrix)
+#ggpairs(uni_var_vqi_data_num)
+
+data_cov_uni <- c("age", "sex", "anticoagulation",
+                  "log_pav",
+                  "max_femoral_pt_at_gradient")
+
+univ_tab <- us %>% 
+  dplyr::select(all_of(data_cov_uni), outcome = ecmo_mortality_yn) %>% ## select variables of interest
+
+  tbl_uvregression(                         ## produce univariate table
+    method = glm,                           ## define regression want to run (generalised linear model)
+    y = outcome,                            ## define outcome variable
+    method.args = list(family = binomial),  ## define what type of glm want to run (logistic)
+    exponentiate = TRUE                     ## exponentiate to produce odds ratios (rather than log odds)
+  )
+
+## view univariate results table 
+univ_tab
+
+
+```
+#### Multivariate Logistic Regression
+
+```{r multivar-logistic-regression-mortality, echo=FALSE}
+
+## run a regression with all variables of interest 
+mv_reg <- data_cov_uni %>%  ## begin with vector of explanatory column names
+  str_c(collapse = "+") %>%     ## combine all names of the variables of interest separated by a plus
+  str_c("ecmo_mortality_yn ~ ", .) %>%    ## combine the names of variables of interest with outcome in formula style
+  glm(family = "binomial",      ## define type of glm as logistic,
+      data = us)          ## define your dataset
+
+
+model_mort_full <- 
+  glm(ecmo_mortality_yn ~ age + sex + anticoagulation +
+        log_pav + max_femoral_pt_at_gradient +
+        ecmo_flow_at_72h, data = us)
+summary(model_mort_full)
+
+model_mort_step <- 
+  glm(ecmo_mortality_yn ~ age +
+        log_pav, data = us,
+      na.action = "na.exclude")
+summary(model_mort_step)
+
+
+confusionMatrix(as.factor(ifelse(fitted(model_mort_step) > .1, "Yes", "No")),
+                reference = as.factor(ifelse(us$ecmo_mortality_yn == 1, "Yes", "No")),
+                positive = "Yes")
+
+invisible(plot(roc(model_mort_step$y,
+                   model_mort_step$fitted.values),
+               print.auc = T, 
+               col = "blue"))
+
+library(arm)
+#likelihood ratio test for different models as needed
+#lrtest()
+
+#This binned plot looks bad
+binnedplot(na.omit(fitted(model_mort_step)), 
+          na.omit(residuals(model_mort_step, type = "response")), 
+           nclass = NULL, 
+           xlab = "Expected Values", 
+           ylab = "Average residual", 
+           main = "Binned residual plot", 
+           cex.pts = 0.8, 
+           col.pts = 1, 
+          col.int = "gray")
+
+detach("package:arm", unload = TRUE)
+detach("package:MASS", unload = TRUE)
+
+mv_tab_base <- model_mort_step %>% 
+  broom::tidy(exponentiate = TRUE, conf.int = TRUE) %>%  ## get a tidy dataframe of estimates 
+  mutate(across(where(is.numeric), round, digits = 4))
+
+mv_tab <- tbl_regression(model_mort_step, exponentiate = TRUE)
+mv_tab
+
+tbl_merge(
+  tbls = list(univ_tab, mv_tab),                          # combine
+  tab_spanner = c("**Univariate**", "**Multivariable**")) # set header names
+
+```
+
+#### ROC Curve for Log Peak Ankle Velocity to predict ECMO Mortality
+```{r roc-logpav-mort, echo=FALSE}
+
+pROC_obj <- us %>%
+  roc_(as.factor("ecmo_mortality_yn"),'log_pav' ,
+       smoothed = TRUE,
+            # arguments for ci
+            ci=TRUE, ci.alpha=0.9, stratified=FALSE,
+            # arguments for plot
+            plot=TRUE, auc.polygon=TRUE, max.auc.polygon=TRUE, grid=TRUE,
+            print.auc=TRUE, show.thres=TRUE)
+
+```
 
 
 ```{r eval=FALSE, include=FALSE}
 
+sas_vars <- read.csv("VascularECMOdataset_sas_vars.csv", header = TRUE)
+
 ecmo.bst <- us %>%
-  select(all_of(vars.descriptive))
-write_csv(ecmo.bst, "VascularECMOdataset_bst.csv")
-
-# Fit the logistic regression model
-fit <- glm(is.numeric(ischemic_comp_yn) ~ sfa_distal_pvs, data = ecmo, family = binomial)
-
-# Generate predictions
-predictions <- predict(fit, type = "response")
-
-# Create a prediction object
-pred <- prediction(predict(fit), labels)
-
-# Create a performance object
-perf <- performance(pred, "tpr", "fpr")
-
-# Plot the ROC curve
-plot(perf)
+  select(all_of(names(sas_vars)))
+write_csv(ecmo.bst, "VascularECMOdataset_bst_v2.csv")
 
 ```
+
 

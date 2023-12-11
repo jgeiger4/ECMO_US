@@ -1,0 +1,114 @@
+mortality_yn,ecmo_mortality_yn,ischemic_comp_yn,peak_ankle_velocity,femoral_at_gradient,femoral_pt_gradient,max_femoral_pt_at_gradient,average_ankle_velocity,contra_sfa_aav_gradiant,age,sex,race_ethnicity,bmi,chronic_lung_disease,DM,HLD,pad_yn,smoking_tobacco_use,anticoagulation,shock_after_cardiac_arrest,cardiogenic_shock,etiology_of_shock,cannulation_location,same_side_inflow_outflow,outflow_cannula_size,distal_perfusion_at_cannulation,reperfusion_cath_at_us
+Yes,Yes,Yes,26.4,.,99.6,99.6,19.1,.,43,Female,White,40.5,No,No,No,No,Remote,Yes,No,Yes,other,Operating Room,Yes,19,Yes,0
+Yes,Yes,No,29.3,10.7,15.9,15.9,22.2,-7.2,74,Male,White,37.2,No,No,Yes,No,none,Yes,No,Yes,other,Operating Room,No,17,Yes,0
+Yes,Yes,Yes,32.2,-0.7,-23.2,-0.7,18.2,36.8,71,Male,White,30.7,No,No,Yes,No,none,Yes,No,Yes,myocardial_infarction,ICU,Yes,19,No,1
+Yes,Yes,No,35.5,-23.5,1.8,1.8,18.83333333,14.16666667,56,Male,White,36.6,Yes,Yes,Yes,No,Recent (within 30 days),Yes,No,Yes,myocardial_infarction,Cath lab,No,15,Yes,0
+No,.,Yes,16.9,.,.,.,14.1,.,52,Female,White,43.4,Yes,No,No,No,remote,Yes,No,Yes,other,ICU,Yes,15,No,0
+Yes,Yes,No,11.9,12.7,15.5,15.5,10.56666667,19.43333333,58,Male,White,36.8,No,No,Yes,No,Remote,Yes,Yes,Yes,myocardial_infarction,Emergency Department,No,15,Yes,0
+No,.,No,.,.,.,.,.,.,65,Female,White,23.7,No,Yes,Yes,No,Recent (within 30 days),Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,Cath lab,No,15,Yes,0
+Yes,Yes,Yes,60.7,.,-24.7,-24.7,60.7,-27.7,66,Male,White,36.8,No,No,No,No,Remote,Yes,Yes,Yes,myocardial_infarction,Cath lab,No,17,Yes,0
+Yes,Yes,No,30.3,.,.,.,24.5,83.5,71,Female,White,34.3,No,No,No,No,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,Cath lab,Yes,15,Yes,0
+Yes,Yes,No,28.1,55.9,47.6,55.9,21.53333333,.,61,Male,White,16.2,No,No,Yes,No,remote,Yes,No,Yes,heart_failure,Cath lab,Yes,15,Yes,1
+Yes,Yes,Yes,9.5,.,70.5,70.5,9.5,.,65,Male,Other,23.4,No,Yes,No,No,none,Yes,No,Yes,myocardial_infarction,OSH,Yes,17,Yes,0
+Yes,Yes,No,18.5,26,7.5,26,6.166666667,99.83333333,58,Male,.,38.2,No,No,Yes,No,Remote,Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,OSH,Yes,20,Yes,0
+Yes,Yes,No,11.2,125.4,125.4,125.4,11.2,44.8,73,Female,White,.,No,No,No,No,.,Yes,No,Yes,myocardial_infarction,Cath lab,Yes,15,Yes,0
+Yes,Yes,No,11,44.8,43.3,44.8,9.633333333,23.36666667,66,Male,White,35.4,No,No,No,No,none,Yes,No,Yes,heart_failure,Operating Room,No,15,Yes,0
+No,.,No,70.6,9.8,4.4,9.8,46.8,.,72,Female,White,29,No,No,No,No,none,Yes,Yes,Yes,acute_pulmonary_embolism,Emergency Department,No,15,Yes,0
+No,.,Yes,43.1,0.4,-26.1,0.4,26.7,30.3,34,Female,White,46.7,No,No,No,No,Recent (within 30 days),Yes,No,Yes,heart_failure,Cath lab,No,15,Yes,0
+No,.,No,.,.,.,.,.,.,35,Male,Other,34.9,No,No,No,No,Recent (within 30 days),Yes,Yes,Yes,decompensated_nonischemic_cardiomyopathy,Cath lab,No,15,Yes,0
+No,.,No,7.8,.,13.2,13.2,7.8,46.2,62,Male,White,26.8,No,No,No,No,remote,Yes,No,Yes,myocardial_infarction,Operating Room,Yes,17,.,1
+Yes,Yes,Yes,15.2,-2.2,3.8,3.8,12.23333333,110.7666667,68,Female,White,40.7,Yes,Yes,No,No,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,Cath lab,Yes,15,Yes,0
+Yes,Yes,No,7.1,34.5,30.9,34.5,5.433333333,.,44,Male,White,.,No,No,No,No,none,Yes,Yes,Yes,decompensated_nonischemic_cardiomyopathy,Cath lab,No,15,Yes,0
+No,.,Yes,26.3,.,.,.,21.13333333,.,68,Male,White,28.2,No,Yes,No,No,Recent (within 30 days),Yes,No,Yes,heart_failure,Cath lab,Yes,17,Yes,0
+Yes,Yes,No,0,11,.,11,0,88,46,Male,African-American or Black,35.6,No,No,No,No,none,Yes,Yes,Yes,acute_pulmonary_embolism,Other,Yes,15,No,1
+Yes,Yes,Yes,26.3,64.7,66.2,66.2,22.33333333,42.66666667,51,Male,.,.,No,No,No,No,.,No,No,No,other,.,No,17,.,1
+No,.,Yes,4.5,8.5,9.1,9.1,4.233333333,50.76666667,37,Male,White,29.3,No,No,No,No,remote,Yes,Yes,Yes,myocardial_infarction,Cath lab,No,15,No,0
+No,.,No,16,.,.,.,12.73333333,27.26666667,34,Male,White,.,No,No,No,No,none,Yes,No,Yes,myocardial_infarction,Cath lab,Yes,17,Yes,0
+Yes,Yes,No,29.4,83.6,101.9,101.9,18.7,.,62,Female,African-American or Black,33.3,Yes,No,Yes,Yes,remote,Yes,No,Yes,heart_failure,Cath lab,Yes,15,Yes,0
+Yes,Yes,No,.,.,.,.,.,.,69,Male,White,30.2,No,No,Yes,No,none,Yes,No,Yes,myocardial_infarction,Cath lab,Yes,15,Yes,0
+Yes,Yes,Yes,4.1,6.3,6.1,6.3,3.9,.,40,Male,White,38.8,Yes,Yes,No,No,none,Yes,No,Yes,other,Operating Room,No,19,No,1
+Yes,Yes,No,32.8,109.2,111.9,111.9,29.43333333,45.56666667,74,Male,White,29,No,No,No,No,remote,Yes,Yes,Yes,heart_failure,Operating Room,No,15,Yes,0
+Yes,Yes,Yes,7.9,.,6.1,6.1,7.9,7.1,57,Male,White,27.9,No,Yes,No,Yes,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,ICU,Yes,15,No,0
+Yes,Yes,Yes,37.6,131.5,102.4,131.5,21.23333333,.,54,Male,White,21.7,Yes,Yes,No,No,Recent (within 30 days),Yes,Yes,Yes,heart_failure,Cath lab,Yes,19,Yes,0
+No,.,Yes,29,25,5,25,17,20,54,Male,White,27.3,No,No,No,No,Recent (within 30 days),Yes,No,Yes,myocardial_infarction,Cath lab,Yes,17,Yes,0
+Yes,Yes,Yes,6.1,.,.,.,6.1,.,41,Male,Other,30.3,No,No,Yes,Yes,Recent (within 30 days),Yes,Yes,Yes,decompensated_nonischemic_cardiomyopathy,Emergency Department,No,15,Yes,0
+Yes,No,No,11.5,37.9,34.5,37.9,9.833333333,.,75,Male,White,26.3,No,No,Yes,No,remote,Yes,No,Yes,acute_pulmonary_embolism,Operating Room,Yes,15,.,1
+Yes,Yes,No,.,.,.,.,.,.,57,Male,African-American or Black,.,Yes,Yes,No,.,remote,Yes,Yes,Yes,decompensated_ischemic_cardiomyopathy,Cath lab,Yes,17,Yes,0
+Yes,Yes,Yes,18.8,.,38.2,38.2,18.8,.,39,Male,White,.,No,No,No,No,None,Yes,No,Yes,acute_pulmonary_embolism,Cath lab,Yes,17,No,1
+Yes,No,No,31.18,.,2.82,2.82,31.18,13.82,68,Female,African-American or Black,47.7,No,Yes,Yes,No,Remote,Yes,Yes,Yes,myocardial_infarction,ICU,No,15,.,1
+Yes,Yes,Yes,13.5,14.5,18.1,18.1,11.46666667,.,56,Male,White,25.1,No,Yes,Yes,No,Remote,Yes,No,Yes,other,Operating Room,Yes,19,Yes,0
+Yes,No,No,.,.,.,.,.,.,49,Female,Other,32.7,No,Yes,No,No,.,Yes,Yes,Yes,myocardial_infarction,OSH,Yes,19,.,1
+Yes,Yes,No,26.22,26.6,16.48,26.6,21.16,21.84,58,Female,White,.,No,No,No,No,none,Yes,Yes,Yes,acute_pulmonary_embolism,Other,No,19,No,0
+Yes,No,Yes,35.44,240.64,232.56,240.64,25.40666667,.,50,Male,White,33,No,Yes,Yes,No,none,Yes,No,Yes,myocardial_infarction,.,Yes,.,No,0
+Yes,Yes,No,0,0,0,0,0,0,39,Female,African-American or Black,.,No,Yes,No,No,none,Yes,Yes,Yes,decompensated_nonischemic_cardiomyopathy,Operating Room,No,15,Yes,0
+No,.,No,20.76,32.24,34.45,34.45,17.59666667,28.40333333,28,Female,White,.,No,No,No,No,none,Yes,No,No,other,OSH,Yes,.,Yes,0
+Yes,Yes,No,11.82,35.18,38.54,38.54,9.02,40.98,62,Male,White,.,No,No,No,No,remote,Yes,No,Yes,myocardial_infarction,Cath lab,No,15,Yes,0
+Yes,Yes,No,9.1,.,.,.,5.6,-1.5,56,Male,White,.,No,No,No,No,remote,Yes,No,Yes,heart_failure,Cath lab,No,15,Yes,0
+Yes,Yes,No,23.45,43.22,32.55,43.22,16.83333333,87.16666667,65,Male,.,.,No,No,No,No,none,No,No,Yes,myocardial_infarction,Cath lab,Yes,15,No,1
+No,.,No,6,22.57,28.57,28.57,2,25.42,56,Female,African-American or Black,36.3,No,Yes,Yes,No,Remote,Yes,Yes,Yes,myocardial_infarction,Cath lab,Yes,18,Yes,0
+Yes,Yes,Yes,8.51,.,.,.,7.26,.,57,Male,White,.,No,No,Yes,No,none,No,Yes,Yes,myocardial_infarction,.,Yes,21,Yes,0
+Yes,Yes,No,5.7,19.35,20.02,20.02,4.923333333,15.17666667,31,Male,White,.,No,No,No,No,Remote,No,No,Yes,other,Other,No,15,.,1
+Yes,Yes,No,34.33,.,.,.,15.14333333,96.85666667,23,Male,White,.,No,No,No,No,None,No,Yes,Yes,other,Other,Yes,15,.,1
+Yes,Yes,No,10.5,52.6,57.9,57.9,6.833333333,.,65,Male,.,.,No,No,No,No,remote,Yes,No,Yes,myocardial_infarction,Cath lab,Yes,.,Yes,0
+Yes,No,Yes,6.75,31.41,29.25,31.41,5.67,.,54,Female,White,25.7,No,No,No,No,Recent (within 30 days),Yes,No,Yes,acute_pulmonary_embolism,Operating Room,No,17,No,1
+Yes,Yes,No,3.1,9,6.2,9,1.966666667,15.03333333,62,Male,.,.,No,Yes,No,No,.,No,Yes,Yes,myocardial_infarction,OSH,Yes,18,.,1
+Yes,Yes,Yes,3.03,0,-3.03,0,1.515,51.485,26,Female,African-American or Black,.,No,No,No,No,none,No,No,No,other,ICU,Yes,15,Yes,0
+Yes,Yes,No,19.7,40,39.3,40,19.35,20.65,68,Female,White,.,No,No,No,No,none,Yes,No,Yes,decompensated_ischemic_cardiomyopathy,Cath lab,Yes,17,Yes,0
+Yes,Yes,No,22.17,23.9,6.83,23.9,9.09,68.91,57,Male,White,.,No,Yes,No,No,remote,No,No,Yes,decompensated_nonischemic_cardiomyopathy,Cath lab,No,15,Yes,0
+No,.,Yes,22.39,13.63,-2.39,13.63,14.38,.,48,Male,White,33.4,No,No,Yes,No,None,No,Yes,Yes,myocardial_infarction,OSH,No,22,Yes,0
+Yes,Yes,Yes,15.62,.,14.38,14.38,15.62,.,68,Male,White,.,No,No,No,No,none,No,No,Yes,myocardial_infarction,Cath lab,Yes,15,Yes,0
+Yes,Yes,No,9.24,29.37,26.98,29.37,7.516666667,.,63,Male,White,.,No,No,No,No,.,No,No,Yes,other,Operating Room,No,15,.,1
+Yes,Yes,Yes,15.6,.,.,.,12.8,-12.8,61,Male,White,.,No,Yes,No,No,remote,No,No,Yes,other,ICU,Yes,17,Yes,0
+Yes,Yes,Yes,4.45,2.55,3.62,3.62,3.915,23.085,73,Male,White,.,No,No,Yes,No,Remote,Yes,Yes,Yes,other,.,No,.,Yes,0
+Yes,No,Yes,9.47,.,23.53,23.53,9.47,.,75,Male,White,30.8,No,No,Yes,No,Recent (within 30 days),Yes,No,Yes,myocardial_infarction,ICU,Yes,15,No,1
+No,.,No,28.41,39.85,20.59,39.85,18.63333333,25.36666667,35,Male,White,31.8,No,No,No,No,None,Yes,No,Yes,acute_pulmonary_embolism,ICU,No,15,Yes,0
+Yes,Yes,No,8.6,17.4,19.6,19.6,6.8,.,59,Male,White,.,No,No,Yes,No,Remote,No,No,Yes,heart_failure,Operating Room,Yes,19,Yes,0
+Yes,Yes,Yes,6.83,29,22.17,29,2.276666667,.,77,Female,White,.,No,No,Yes,No,remote,No,No,Yes,other,Cath lab,No,17,Yes,0
+No,.,No,53.8,3.2,7,7,52.26666667,.,27,Male,Other,31.9,No,No,No,No,None,No,No,Yes,other,ICU,Yes,15,.,1
+Yes,Yes,No,6.7,38.59,36.3,38.59,3.703333333,14.29666667,41,Male,White,.,Yes,No,No,No,Recent (within 30 days),No,No,Yes,myocardial_infarction,OSH,Yes,19,Yes,0
+Yes,Yes,No,16.8,65.19,71.23,71.23,11.46,43.54,56,Male,White,.,Yes,Yes,No,Yes,remote,Yes,Yes,Yes,heart_failure,Other,No,15,Yes,0
+Yes,Yes,Yes,11.46,.,.,.,11.46,22.54,68,Male,White,.,No,No,No,No,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,Cath lab,No,16,.,1
+No,.,No,25.75,9,-3.75,9,19.88333333,.,66,Male,White,35.9,No,Yes,Yes,No,None,Yes,Yes,Yes,acute_pulmonary_embolism,Other,Yes,15,.,1
+Yes,Yes,Yes,10.29,.,-2.29,-2.29,10.29,.,72,Female,White,.,Yes,Yes,Yes,No,Recent (within 30 days),No,No,No,other,ICU,No,15,Yes,0
+No,.,No,26.33,59.67,69.54,69.54,20.81666667,17.18333333,56,Male,White,21.6,No,Yes,Yes,No,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,Cath lab,No,15,Yes,0
+Yes,Yes,No,6.31,21.33,19.69,21.33,5.54,.,68,Male,White,29.1,No,Yes,Yes,No,Remote,Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,Cath lab,No,17,Yes,0
+No,.,Yes,5.8,.,.,.,1.933333333,.,53,Female,White,38.2,No,Yes,Yes,No,remote,Yes,Yes,Yes,myocardial_infarction,OSH,No,21,Yes,0
+No,.,No,53.3,45.7,65.2,65.2,39.96666667,18.03333333,65,Male,White,29.7,Yes,Yes,Yes,No,Recent (within 30 days),Yes,No,Yes,myocardial_infarction,OSH,Yes,.,Yes,0
+Yes,Yes,No,39.56,.,.,.,39.56,-33.56,60,Male,African-American or Black,.,No,No,No,No,None,Yes,No,Yes,acute_pulmonary_embolism,.,No,.,Yes,0
+Yes,Yes,Yes,5.7,18,18,18,1.9,6.1,68,Male,White,.,No,No,No,No,.,Yes,Yes,Yes,myocardial_infarction,Cath lab,No,15,Yes,0
+No,.,No,74.51,78.31,19.19,78.31,39.63666667,.,21,Female,White,23.5,No,No,No,No,none,Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,Operating Room,No,15,Yes,0
+Yes,No,No,47,18,4,18,39.66666667,.,62,Male,White,.,No,No,Yes,No,remote,Yes,No,Yes,other,OSH,No,22,Yes,0
+No,.,No,.,.,.,.,.,.,41,Female,African-American or Black,41.8,No,No,Yes,No,None,No,No,Yes,decompensated_nonischemic_cardiomyopathy,OSH,No,.,Yes,0
+Yes,Yes,Yes,29.28,.,.,.,22.86666667,37.13333333,33,Male,White,.,No,No,No,No,Recent (within 30 days),No,No,Yes,other,OSH,No,22,No,0
+No,.,No,48.64,122.36,158.94,158.94,24.25333333,32.74666667,33,Male,White,26.6,No,No,No,No,Recent (within 30 days),Yes,No,Yes,heart_failure,Cath lab,No,15,Yes,0
+No,.,No,14.03,.,.,.,9.27,.,29,Female,African-American or Black,30.2,No,Yes,No,No,None,Yes,No,Yes,other,OSH,No,18,.,1
+Yes,No,Yes,30.82,.,.,.,23.42666667,.,62,Female,White,37.6,No,No,No,No,None,Yes,No,Yes,other,OSH,No,15,No,0
+Yes,Yes,Yes,7,.,.,.,6.033333333,34.96666667,64,Female,White,.,No,No,Yes,No,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,.,Yes,19,.,0
+No,.,Yes,6.3,252.2,249.7,252.2,5.1,57.8,30,Female,White,21.5,Yes,Yes,No,No,Remote,Yes,No,Yes,heart_failure,OSH,No,.,Yes,0
+Yes,No,No,.,.,.,.,.,.,50,Male,African-American or Black,37.2,No,Yes,No,No,Recent (within 30 days),Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,Cath lab,No,15,Yes,0
+Yes,Yes,Yes,0,0,0,0,0,.,43,Female,African-American or Black,.,No,No,No,No,Recent (within 30 days),No,No,Yes,acute_pulmonary_embolism,OSH,No,15,No,0
+Yes,No,No,11.01,43.99,37.99,43.99,7.636666667,44.36333333,53,Male,White,29.4,No,No,No,No,Recent (within 30 days),Yes,No,Yes,myocardial_infarction,ICU,No,17,Yes,0
+Yes,Yes,No,6.43,.,.,.,3.7,67.3,75,Male,.,.,No,No,Yes,.,remote,Yes,Yes,Yes,myocardial_infarction,OSH,Yes,.,Yes,0
+Yes,Yes,No,21.99,50.2,50.01,50.2,19.21333333,92.78666667,62,Male,White,.,Yes,No,No,No,Remote,Yes,Yes,Yes,other,Cath lab,No,15,Yes,0
+Yes,Yes,Yes,7.7,.,11.3,11.3,7.7,40.3,43,Male,White,.,No,No,No,No,Recent (within 30 days),Yes,Yes,Yes,myocardial_infarction,.,Yes,19,No,0
+No,.,No,26.25,209.3,202.75,209.3,21.86333333,114.9366667,38,Female,African-American or Black,44.1,No,No,Yes,No,Recent (within 30 days),Yes,No,Yes,acute_pulmonary_embolism,ICU,Yes,15,Yes,0
+Yes,Yes,No,24.37,-4.22,-6.37,-4.22,22.82333333,-1.823333333,80,Male,.,.,No,No,Yes,No,remote,Yes,No,Yes,other,Cath lab,No,15,Yes,0
+No,.,No,14.56,30.3,22.44,30.3,9.183333333,.,38,Female,White,20.4,No,No,No,No,Remote,Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,ICU,No,15,Yes,0
+Yes,No,No,17.98,37.18,28.02,37.18,13.4,5.6,73,Male,White,24.3,No,No,No,No,Recent (within 30 days),Yes,No,Yes,myocardial_infarction,ICU,No,15,Yes,0
+Yes,Yes,No,16.7,36.59,27.96,36.59,12.63666667,.,63,Male,White,36.7,No,Yes,Yes,No,None,Yes,No,Yes,other,Operating Room,Yes,15,Yes,0
+Yes,Yes,No,5.1,62.3,61.9,62.3,4.9,.,79,Female,White,.,No,No,Yes,No,remote,No,No,Yes,heart_failure,ICU,Yes,14,Yes,0
+Yes,Yes,No,.,.,.,.,.,.,57,Male,White,.,No,No,No,No,Recent (within 30 days),No,No,Yes,myocardial_infarction,ICU,No,15,.,0
+No,.,Yes,33.6,15.3,7.4,15.3,29.65,12.35,53,Male,White,27.8,No,No,No,No,Recent (within 30 days),No,No,Yes,myocardial_infarction,OSH,Yes,17,.,1
+No,.,Yes,9.2,8.8,12,12,7.4,.,41,Male,African-American or Black,43.7,No,No,No,No,None,Yes,No,Yes,decompensated_nonischemic_cardiomyopathy,ICU,No,17,Yes,0
+Yes,No,Yes,4.24,4.92,0.68,4.92,2.12,23.25,63,Male,White,39.8,No,Yes,No,No,remote,Yes,No,Yes,myocardial_infarction,Cath lab,Yes,15,No,1
+Yes,.,Yes,31.83,176,160.11,176,15.90666667,-15.90666667,74,Female,White,.,No,No,Yes,Yes,remote,Yes,No,Yes,other,OSH,Yes,21,.,0
+No,.,Yes,6.68,267,264.32,267,5.116666667,273.8833333,53,Male,White,33.8,No,No,Yes,No,Remote,No,Yes,Yes,myocardial_infarction,Cath lab,No,15,Yes,0
+No,.,Yes,28.28,151.63,136.82,151.63,19.11,.,56,Female,White,37.2,No,No,No,No,remote,Yes,No,Yes,acute_pulmonary_embolism,OSH,Yes,17,Yes,0
+No,.,Yes,84.7,32.3,37.4,37.4,82.15,-46.15,42,Female,White,30.9,No,No,No,No,none,.,Yes,Yes,other,ICU,Yes,15,No,0
+Yes,Yes,Yes,0,18,18,18,0,65,59,Male,White,.,No,No,Yes,No,Recent (within 30 days),No,No,Yes,myocardial_infarction,.,Yes,.,No,1
+Yes,Yes,No,9.5,156.5,157.2,157.2,8.3,24.7,53,Male,African-American or Black,20.1,No,No,No,No,Recent (within 30 days),Yes,.,Yes,.,Cath lab,No,15,Yes,0
+Yes,Yes,Yes,.,.,.,.,.,.,23,Female,African-American or Black,23.6,Yes,Yes,No,No,none,Yes,Yes,Yes,.,ICU,No,15,No,0
+No,.,Yes,13.59,57.9,61.1,61.1,10.86333333,.,47,Male,White,40.5,No,No,Yes,No,None,Yes,Yes,Yes,.,OSH,Yes,17,No,1
+Yes,Yes,No,11.23,.,65.77,65.77,7.285,37.715,38,Female,African-American or Black,.,No,No,No,No,Recent (within 30 days),No,Yes,Yes,.,Emergency Department,No,15,Yes,0
+Yes,.,Yes,9.5,-0.23,-3.5,-0.23,7.833333333,58.26666667,61,Male,White,32.1,No,Yes,No,Yes,none,No,Yes,Yes,.,OSH,Yes,.,No,1
+Yes,No,No,61.59,22.41,25.05,25.05,51.65,.,51,Female,Other,41.8,No,No,No,No,None,Yes,Yes,Yes,.,Cath lab,No,15,Yes,0
